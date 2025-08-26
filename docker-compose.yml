@@ -113,24 +113,37 @@ services:
   # AI/ML Service
   ai-service:
     build:
-      context: ./ai-ml
-      dockerfile: Dockerfile.dev
+      context: ./ai-service
+      dockerfile: Dockerfile
     container_name: modmaster-ai-service
     environment:
       - ENVIRONMENT=development
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://modmaster_user:modmaster_password@postgres:5432/modmaster_pro
+      - REDIS_URL=redis://redis:6379/1
+      - BACKEND_API_URL=http://backend-api:3000
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-dev-api-key}
       - MODEL_STORAGE_PATH=/app/models
-      - API_PORT=8000
+      - DEBUG=true
+      - PYTHONUNBUFFERED=1
+      - PORT=8001
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
-      - ./ai-ml:/app
-      - ai_models:/app/models
+      - ./ai-service:/app
+      - ai-models:/app/models
+      - ai-data:/app/data
     networks:
       - modmaster-network
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Web Scraping Service
   scraping-service:
@@ -143,9 +156,9 @@ services:
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgresql://modmaster_user:modmaster_password@postgres:5432/modmaster_pro
       - N8N_URL=http://n8n:5678
-      - API_PORT=8001
+      - API_PORT=8002
     ports:
-      - "8001:8001"
+      - "8002:8002"
     volumes:
       - ./web-scraping:/app
       - scraping_cache:/app/cache
@@ -263,7 +276,8 @@ volumes:
   redis_data:
   elasticsearch_data:
   n8n_data:
-  ai_models:
+  ai-models:
+  ai-data:
   scraping_cache:
   prometheus_data:
   grafana_data:
