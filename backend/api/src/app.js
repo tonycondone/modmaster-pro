@@ -12,7 +12,7 @@ require('express-async-errors');
 // Import configuration
 const config = require('./config');
 const logger = require('./utils/logger');
-const errorHandler = require('./middleware/errorHandler');
+const { errorHandler } = require('./middleware/errorHandler');
 const notFoundHandler = require('./middleware/notFoundHandler');
 
 // Import routes
@@ -27,12 +27,15 @@ const projectRoutes = require('./routes/projects');
 const healthRoutes = require('./routes/health');
 
 // Import middleware
-const authMiddleware = require('./middleware/auth');
+const { initializePassport, requireAuth } = require('./middleware/auth');
 const validationMiddleware = require('./middleware/validation');
-const rateLimitMiddleware = require('./middleware/rateLimit');
+const { rateLimiters, addRateLimitHeaders } = require('./middleware/rateLimit');
 
 // Create Express app
 const app = express();
+
+// Initialize passport
+initializePassport(app);
 
 // Trust proxy for rate limiting
 app.set('trust proxy', 1);
@@ -144,13 +147,13 @@ app.use('/health', healthRoutes);
 
 // API routes with rate limiting
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/users', authMiddleware.requireAuth, userRoutes);
-app.use('/api/v1/vehicles', authMiddleware.requireAuth, vehicleRoutes);
+app.use('/api/v1/users', requireAuth, userRoutes);
+app.use('/api/v1/vehicles', requireAuth, vehicleRoutes);
 app.use('/api/v1/parts', partRoutes);
-app.use('/api/v1/scans', authMiddleware.requireAuth, scanRoutes);
-app.use('/api/v1/recommendations', authMiddleware.requireAuth, recommendationRoutes);
+app.use('/api/v1/scans', requireAuth, scanRoutes);
+app.use('/api/v1/recommendations', requireAuth, recommendationRoutes);
 app.use('/api/v1/marketplace', marketplaceRoutes);
-app.use('/api/v1/projects', authMiddleware.requireAuth, projectRoutes);
+app.use('/api/v1/projects', requireAuth, projectRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
