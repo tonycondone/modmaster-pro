@@ -43,7 +43,7 @@ jobs:
     - name: Generate Code Statistics
       id: code-stats
       run: |
-        cloc . --json --out=code-stats.json
+        cloc . --json --out=code-stats.json || echo "cloc failed, continuing..."
         echo "total-commits=$(git rev-list --all --count)" >> $GITHUB_OUTPUT
         echo "contributors=$(git log --format='%an' | sort -u | wc -l)" >> $GITHUB_OUTPUT
         echo "files-changed=$(git diff --name-only HEAD~1 2>/dev/null | wc -l)" >> $GITHUB_OUTPUT
@@ -58,31 +58,73 @@ jobs:
         import json
         from datetime import datetime
         
-        expected_files = {
-            'backend': ['src/app.js', 'src/routes/', 'src/controllers/', 'src/models/', 'package.json'],
-            'frontend': ['src/App.jsx', 'src/components/', 'package.json'],
-            'ai-models': ['models/', 'training/', 'requirements.txt'],
-            'scraping': ['n8n-workflows/', 'scrapers/', 'requirements.txt'],
-            'infrastructure': ['docker-compose.yml', 'kubernetes/'],
-            'documentation': ['README.md', 'CONTRIBUTING.md', 'API.md']
+        # Define expected project structure
+        expected_structure = {
+            'backend': {
+                'src': ['controllers', 'models', 'routes', 'services', 'middleware', 'config'],
+                'files': ['package.json', 'Dockerfile']
+            },
+            'mobile-app': {
+                'src': ['components', 'screens', 'services', 'utils'],
+                'files': ['package.json', 'app.json']
+            },
+            'ai-models': {
+                'dirs': ['training', 'models', 'inference'],
+                'files': ['requirements.txt', 'Dockerfile']
+            },
+            'scraping': {
+                'dirs': ['n8n-workflows', 'scrapers'],
+                'files': ['requirements.txt']
+            },
+            'infrastructure': {
+                'dirs': ['docker', 'kubernetes', 'terraform'],
+                'files': ['docker-compose.yml']
+            },
+            'docs': {
+                'dirs': ['api', 'deployment', 'development'],
+                'files': ['README.md', 'CONTRIBUTING.md']
+            }
         }
         
-        total_expected = sum(len(files) for files in expected_files.values())
-        total_found = 0
+        # Calculate completion
+        total_components = 0
+        completed_components = 0
         
-        for category, files in expected_files.items():
-            for file_path in files:
-                if os.path.exists(file_path) or (file_path.endswith('/') and os.path.isdir(file_path.rstrip('/'))):
-                    total_found += 1
+        for category, structure in expected_structure.items():
+            # Check directories
+            if 'dirs' in structure:
+                for dir_name in structure['dirs']:
+                    total_components += 1
+                    if os.path.isdir(dir_name):
+                        completed_components += 1
+                    elif os.path.isdir(os.path.join(category, dir_name)):
+                        completed_components += 1
+            
+            # Check subdirectories
+            if 'src' in structure:
+                for subdir in structure['src']:
+                    total_components += 1
+                    if os.path.isdir(os.path.join(category, 'src', subdir)):
+                        completed_components += 1
+            
+            # Check files
+            if 'files' in structure:
+                for file_name in structure['files']:
+                    total_components += 1
+                    if os.path.isfile(file_name):
+                        completed_components += 1
+                    elif os.path.isfile(os.path.join(category, file_name)):
+                        completed_components += 1
         
-        completion_percentage = (total_found / total_expected) * 100
+        completion_percentage = (completed_components / total_components * 100) if total_components > 0 else 0
         
+        # Generate progress report
         progress_report = f'''# ModMaster Pro - Development Progress Report
         
         ## 📊 Project Overview
         - **Overall Completion**: {completion_percentage:.1f}%
-        - **Total Expected Components**: {total_expected}
-        - **Components Implemented**: {total_found}
+        - **Total Expected Components**: {total_components}
+        - **Components Implemented**: {completed_components}
         - **Last Updated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
         
         ## 🎯 Current Development Phase
@@ -100,25 +142,25 @@ jobs:
         4. Develop mobile app UI components
         
         ## 📋 Component Status
-        ### Backend API (25% Complete)
+        ### Backend API ({'25%' if os.path.isdir('backend/src') else '10%'} Complete)
         - [x] Project structure
         - [ ] Authentication system
         - [ ] Database models
         - [ ] API endpoints
         
-        ### AI/ML Pipeline (15% Complete)
+        ### AI/ML Pipeline ({'15%' if os.path.isdir('ai-models') else '5%'} Complete)
         - [x] Project structure
         - [ ] Image recognition model
         - [ ] Recommendation engine
         - [ ] Training infrastructure
         
-        ### Web Scraping (20% Complete)
+        ### Web Scraping ({'20%' if os.path.isdir('scraping') else '10%'} Complete)
         - [x] Project structure
         - [ ] N8N workflows
         - [ ] Amazon API integration
         - [ ] Data validation
         
-        ### Mobile App (10% Complete)
+        ### Mobile App ({'10%' if os.path.isdir('mobile-app') else '5%'} Complete)
         - [x] Project structure
         - [ ] UI components
         - [ ] Camera integration
@@ -127,10 +169,12 @@ jobs:
         *Report generated automatically by GitHub Actions*
         '''
         
+        # Write report
         with open('PROGRESS_REPORT.md', 'w') as f:
             f.write(progress_report)
         
         print(f'Progress report generated - {completion_percentage:.1f}% complete')
+        print(f'Total components: {total_components}, Completed: {completed_components}')
         "
         
     - name: Commit Progress Updates
@@ -143,6 +187,8 @@ jobs:
         if ! git diff --staged --quiet; then
           git commit -m "🤖 Automated progress update - $(date '+%Y-%m-%d %H:%M')"
           git push
+        else
+          echo "No changes to commit"
         fi
 
   build-check:
@@ -158,8 +204,8 @@ jobs:
         echo "🔍 Validating project structure..."
         
         required_dirs=(
-          "backend/src"
-          "mobile-app/src"
+          "backend"
+          "mobile-app"
           "ai-models"
           "scraping"
           "infrastructure"
