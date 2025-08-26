@@ -1,0 +1,277 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: modmaster-postgres
+    environment:
+      POSTGRES_DB: modmaster_pro
+      POSTGRES_USER: modmaster_user
+      POSTGRES_PASSWORD: modmaster_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - modmaster-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U modmaster_user -d modmaster_pro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: modmaster-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - modmaster-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch for Search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: modmaster-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - modmaster-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # n8n Workflow Automation
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: modmaster-n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=modmaster123
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=UTC
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./web-scraping/n8n-workflows:/home/node/.n8n/workflows
+    networks:
+      - modmaster-network
+    depends_on:
+      - postgres
+      - redis
+
+  # Backend API Service
+  backend-api:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile.dev
+    container_name: modmaster-backend-api
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://modmaster_user:modmaster_password@postgres:5432/modmaster_pro
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - API_PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/api:/app
+      - /app/node_modules
+    networks:
+      - modmaster-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  # AI/ML Service
+  ai-service:
+    build:
+      context: ./ai-ml
+      dockerfile: Dockerfile.dev
+    container_name: modmaster-ai-service
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379
+      - MODEL_STORAGE_PATH=/app/models
+      - API_PORT=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ai-ml:/app
+      - ai_models:/app/models
+    networks:
+      - modmaster-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Web Scraping Service
+  scraping-service:
+    build:
+      context: ./web-scraping
+      dockerfile: Dockerfile.dev
+    container_name: modmaster-scraping-service
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://modmaster_user:modmaster_password@postgres:5432/modmaster_pro
+      - N8N_URL=http://n8n:5678
+      - API_PORT=8001
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./web-scraping:/app
+      - scraping_cache:/app/cache
+    networks:
+      - modmaster-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      n8n:
+        condition: service_started
+
+  # Worker Service for Background Jobs
+  worker-service:
+    build:
+      context: ./backend/worker-service
+      dockerfile: Dockerfile.dev
+    container_name: modmaster-worker-service
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://modmaster_user:modmaster_password@postgres:5432/modmaster_pro
+    volumes:
+      - ./backend/worker-service:/app
+    networks:
+      - modmaster-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Frontend Mobile App (React Native)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: modmaster-frontend
+    environment:
+      - NODE_ENV=development
+      - REACT_NATIVE_PACKAGER_HOSTNAME=localhost
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+    ports:
+      - "19000:19000"  # Expo DevTools
+      - "19001:19001"  # Expo CLI
+      - "19002:19002"  # Expo Go
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - modmaster-network
+    depends_on:
+      - backend-api
+
+  # Prometheus for Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: modmaster-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - modmaster-network
+
+  # Grafana for Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: modmaster-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=modmaster123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana:/etc/grafana/provisioning
+    networks:
+      - modmaster-network
+    depends_on:
+      - prometheus
+
+  # MinIO for File Storage (S3 Compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: modmaster-minio
+    environment:
+      - MINIO_ROOT_USER=modmaster_user
+      - MINIO_ROOT_PASSWORD=modmaster_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - modmaster-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  n8n_data:
+  ai_models:
+  scraping_cache:
+  prometheus_data:
+  grafana_data:
+  minio_data:
+
+networks:
+  modmaster-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
