@@ -14,6 +14,10 @@ env:
   PYTHON_VERSION: '3.11'
   PROJECT_NAME: 'ModMaster Pro'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   track-progress:
     runs-on: ubuntu-latest
@@ -24,6 +28,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -179,14 +184,14 @@ jobs:
         
     - name: Commit Progress Updates
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action - Progress Tracker"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
         
         git add PROGRESS_REPORT.md
         
         if ! git diff --staged --quiet; then
           git commit -m "🤖 Automated progress update - $(date '+%Y-%m-%d %H:%M')"
-          git push
+          git push origin main
         else
           echo "No changes to commit"
         fi
