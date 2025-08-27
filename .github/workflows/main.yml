@@ -184,8 +184,8 @@ jobs:
         
     - name: Commit Progress Updates
       run: |
-        git config --local touyboateng339@gmail.com "github-actions[bot]@users.noreply.github.com"
-        git config --local tonycondone "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
         
         git add PROGRESS_REPORT.md
         
