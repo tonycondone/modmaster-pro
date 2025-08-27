@@ -1,360 +1,190 @@
-const { db } = require('../utils/database');
-const { ValidationError, NotFoundError } = require('../middleware/errorHandler');
+const { DataTypes } = require('sequelize');
 
-class Vehicle {
-  static tableName = 'vehicles';
-
-  // Find vehicle by ID
-  static async findById(id) {
-    const vehicle = await db(this.tableName)
-      .where({ id })
-      .first();
-    
-    if (!vehicle) {
-      throw new NotFoundError('Vehicle not found');
-    }
-    
-    return vehicle;
-  }
-
-  // Find vehicles by user ID
-  static async findByUserId(userId, options = {}) {
-    const { page = 1, limit = 20, sort = 'created_at:desc' } = options;
-    const offset = (page - 1) * limit;
-    const [sortField, sortOrder] = sort.split(':');
-
-    const query = db(this.tableName)
-      .where({ user_id: userId });
-
-    // Get total count
-    const [{ count }] = await query.clone().count('* as count');
-
-    // Get paginated results
-    const vehicles = await query
-      .orderBy(sortField, sortOrder)
-      .limit(limit)
-      .offset(offset);
-
-    return {
-      data: vehicles,
-      pagination: {
-        total: parseInt(count, 10),
-        page,
-        limit,
-        pages: Math.ceil(count / limit),
-      },
-    };
-  }
-
-  // Create new vehicle
-  static async create(userId, vehicleData) {
-    const {
-      vin,
-      make,
-      model,
-      year,
-      trim,
-      engine_type,
-      engine_displacement,
-      transmission,
-      drivetrain,
-      body_style,
-      exterior_color,
-      interior_color,
-      mileage,
-      license_plate,
-      nickname,
-      description,
-      specifications = {},
-      purchase_date,
-      purchase_price,
-      is_primary = false,
-      is_public = true,
-    } = vehicleData;
-
-    // Check if VIN already exists
-    if (vin) {
-      const existing = await db(this.tableName)
-        .where({ vin })
-        .first();
-      
-      if (existing) {
-        throw new ValidationError('VIN already registered');
+module.exports = (sequelize) => {
+  const Vehicle = sequelize.define('Vehicle', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'user_id',
+      references: {
+        model: 'users',
+        key: 'id'
       }
-    }
-
-    // If setting as primary, unset other vehicles
-    if (is_primary) {
-      await db(this.tableName)
-        .where({ user_id: userId })
-        .update({ is_primary: false });
-    }
-
-    // Create vehicle
-    const [vehicle] = await db(this.tableName)
-      .insert({
-        user_id: userId,
-        vin,
-        make,
-        model,
-        year,
-        trim,
-        engine_type,
-        engine_displacement,
-        transmission,
-        drivetrain,
-        body_style,
-        exterior_color,
-        interior_color,
-        mileage,
-        license_plate,
-        nickname,
-        description,
-        specifications,
-        purchase_date,
-        purchase_price,
-        is_primary,
-        is_public,
-        created_at: new Date(),
-        updated_at: new Date(),
-      })
-      .returning('*');
-
-    return vehicle;
-  }
-
-  // Update vehicle
-  static async update(id, userId, updateData) {
-    // Check ownership
-    const vehicle = await this.findById(id);
-    if (vehicle.user_id !== userId) {
-      throw new NotFoundError('Vehicle not found');
-    }
-
-    // Remove fields that shouldn't be updated
-    const {
-      id: _,
-      user_id,
-      created_at,
-      views_count,
-      likes_count,
-      total_invested,
-      ...safeUpdateData
-    } = updateData;
-
-    // Check VIN uniqueness if updating
-    if (safeUpdateData.vin && safeUpdateData.vin !== vehicle.vin) {
-      const existing = await db(this.tableName)
-        .where({ vin: safeUpdateData.vin })
-        .whereNot({ id })
-        .first();
-      
-      if (existing) {
-        throw new ValidationError('VIN already registered');
+    },
+    vin: {
+      type: DataTypes.STRING(17),
+      unique: true,
+      validate: {
+        len: [17, 17],
+        is: /^[A-HJ-NPR-Z0-9]{17}$/
       }
+    },
+    make: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    model: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    year: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      validate: {
+        min: 1900,
+        max: new Date().getFullYear() + 1
+      }
+    },
+    trim: {
+      type: DataTypes.STRING
+    },
+    engineType: {
+      type: DataTypes.STRING,
+      field: 'engine_type'
+    },
+    engineDisplacement: {
+      type: DataTypes.FLOAT,
+      field: 'engine_displacement'
+    },
+    transmission: {
+      type: DataTypes.STRING
+    },
+    drivetrain: {
+      type: DataTypes.ENUM('FWD', 'RWD', 'AWD', '4WD')
+    },
+    bodyStyle: {
+      type: DataTypes.STRING,
+      field: 'body_style'
+    },
+    exteriorColor: {
+      type: DataTypes.STRING,
+      field: 'exterior_color'
+    },
+    interiorColor: {
+      type: DataTypes.STRING,
+      field: 'interior_color'
+    },
+    mileage: {
+      type: DataTypes.INTEGER,
+      validate: {
+        min: 0
+      }
+    },
+    licensePlate: {
+      type: DataTypes.STRING,
+      field: 'license_plate'
+    },
+    nickname: {
+      type: DataTypes.STRING
+    },
+    description: {
+      type: DataTypes.TEXT
+    },
+    images: {
+      type: DataTypes.JSONB,
+      defaultValue: []
+    },
+    specifications: {
+      type: DataTypes.JSONB,
+      defaultValue: {}
+    },
+    modifications: {
+      type: DataTypes.JSONB,
+      defaultValue: []
+    },
+    maintenanceHistory: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+      field: 'maintenance_history'
+    },
+    purchaseDate: {
+      type: DataTypes.DATE,
+      field: 'purchase_date'
+    },
+    purchasePrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      field: 'purchase_price'
+    },
+    currentValue: {
+      type: DataTypes.DECIMAL(10, 2),
+      field: 'current_value'
+    },
+    totalInvested: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+      field: 'total_invested'
+    },
+    isPrimary: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: 'is_primary'
+    },
+    isPublic: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      field: 'is_public'
+    },
+    viewsCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'views_count'
+    },
+    likesCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'likes_count'
+    },
+    performanceData: {
+      type: DataTypes.JSONB,
+      defaultValue: {},
+      field: 'performance_data'
     }
+  }, {
+    tableName: 'vehicles',
+    underscored: true,
+    timestamps: true
+  });
 
-    // If setting as primary, unset other vehicles
-    if (safeUpdateData.is_primary) {
-      await db(this.tableName)
-        .where({ user_id: userId })
-        .whereNot({ id })
-        .update({ is_primary: false });
-    }
-
-    // Update vehicle
-    const [updated] = await db(this.tableName)
-      .where({ id })
-      .update({
-        ...safeUpdateData,
-        updated_at: new Date(),
-      })
-      .returning('*');
-
-    return updated;
-  }
-
-  // Delete vehicle
-  static async delete(id, userId) {
-    const vehicle = await this.findById(id);
-    if (vehicle.user_id !== userId) {
-      throw new NotFoundError('Vehicle not found');
-    }
-
-    await db(this.tableName)
-      .where({ id })
-      .delete();
-
-    return { success: true };
-  }
-
-  // Add modification to vehicle
-  static async addModification(id, userId, modification) {
-    const vehicle = await this.findById(id);
-    if (vehicle.user_id !== userId) {
-      throw new NotFoundError('Vehicle not found');
-    }
-
-    const modifications = vehicle.modifications || [];
-    modifications.push({
+  // Instance methods
+  Vehicle.prototype.addModification = async function(modification) {
+    const mods = this.modifications || [];
+    mods.push({
       ...modification,
-      added_at: new Date(),
+      addedAt: new Date()
     });
-
-    const [updated] = await db(this.tableName)
-      .where({ id })
-      .update({
-        modifications,
-        updated_at: new Date(),
-      })
-      .returning('*');
-
-    return updated;
-  }
-
-  // Add maintenance record
-  static async addMaintenanceRecord(id, userId, record) {
-    const vehicle = await this.findById(id);
-    if (vehicle.user_id !== userId) {
-      throw new NotFoundError('Vehicle not found');
+    this.modifications = mods;
+    
+    if (modification.cost) {
+      this.totalInvested = (parseFloat(this.totalInvested) || 0) + parseFloat(modification.cost);
     }
+    
+    await this.save();
+  };
 
-    const maintenance_history = vehicle.maintenance_history || [];
-    maintenance_history.push({
+  Vehicle.prototype.addMaintenanceRecord = async function(record) {
+    const history = this.maintenanceHistory || [];
+    history.push({
       ...record,
-      recorded_at: new Date(),
+      recordedAt: new Date()
     });
-
-    const [updated] = await db(this.tableName)
-      .where({ id })
-      .update({
-        maintenance_history,
-        updated_at: new Date(),
-      })
-      .returning('*');
-
-    return updated;
-  }
-
-  // Update performance data
-  static async updatePerformanceData(id, userId, performanceData) {
-    const vehicle = await this.findById(id);
-    if (vehicle.user_id !== userId) {
-      throw new NotFoundError('Vehicle not found');
+    this.maintenanceHistory = history;
+    
+    if (record.mileage && record.mileage > this.mileage) {
+      this.mileage = record.mileage;
     }
+    
+    await this.save();
+  };
 
-    const [updated] = await db(this.tableName)
-      .where({ id })
-      .update({
-        performance_data: {
-          ...vehicle.performance_data,
-          ...performanceData,
-          updated_at: new Date(),
-        },
-        updated_at: new Date(),
-      })
-      .returning('*');
+  Vehicle.prototype.incrementViews = async function() {
+    this.viewsCount = (this.viewsCount || 0) + 1;
+    await this.save();
+  };
 
-    return updated;
-  }
-
-  // Increment view count
-  static async incrementViews(id) {
-    await db(this.tableName)
-      .where({ id })
-      .increment('views_count', 1);
-  }
-
-  // Search public vehicles
-  static async searchPublic(query, options = {}) {
-    const {
-      page = 1,
-      limit = 20,
-      sort = 'created_at:desc',
-      make,
-      model,
-      year_min,
-      year_max,
-    } = options;
-
-    const offset = (page - 1) * limit;
-    const [sortField, sortOrder] = sort.split(':');
-
-    let dbQuery = db(this.tableName)
-      .where({ is_public: true });
-
-    // Apply search filters
-    if (query) {
-      dbQuery = dbQuery.where(function() {
-        this.where('nickname', 'ilike', `%${query}%`)
-          .orWhere('description', 'ilike', `%${query}%`)
-          .orWhere('make', 'ilike', `%${query}%`)
-          .orWhere('model', 'ilike', `%${query}%`);
-      });
-    }
-
-    if (make) {
-      dbQuery = dbQuery.where('make', 'ilike', make);
-    }
-
-    if (model) {
-      dbQuery = dbQuery.where('model', 'ilike', model);
-    }
-
-    if (year_min) {
-      dbQuery = dbQuery.where('year', '>=', year_min);
-    }
-
-    if (year_max) {
-      dbQuery = dbQuery.where('year', '<=', year_max);
-    }
-
-    // Get total count
-    const [{ count }] = await dbQuery.clone().count('* as count');
-
-    // Get paginated results with user info
-    const vehicles = await dbQuery
-      .select(
-        'vehicles.*',
-        'users.username',
-        'users.avatar_url as owner_avatar'
-      )
-      .leftJoin('users', 'vehicles.user_id', 'users.id')
-      .orderBy(`vehicles.${sortField}`, sortOrder)
-      .limit(limit)
-      .offset(offset);
-
-    return {
-      data: vehicles,
-      pagination: {
-        total: parseInt(count, 10),
-        page,
-        limit,
-        pages: Math.ceil(count / limit),
-      },
-    };
-  }
-
-  // Get vehicle statistics
-  static async getStats(vehicleId) {
-    const stats = await db.raw(`
-      SELECT 
-        v.id,
-        v.total_invested,
-        COUNT(DISTINCT mp.id) as projects_count,
-        COUNT(DISTINCT vs.id) as scans_count,
-        COUNT(DISTINCT r.id) as reviews_count,
-        AVG(r.rating) as average_rating
-      FROM vehicles v
-      LEFT JOIN modification_projects mp ON mp.vehicle_id = v.id
-      LEFT JOIN vehicle_scans vs ON vs.vehicle_id = v.id
-      LEFT JOIN reviews r ON r.vehicle_id = v.id
-      WHERE v.id = ?
-      GROUP BY v.id, v.total_invested
-    `, [vehicleId]);
-
-    return stats.rows[0] || null;
-  }
-}
-
-module.exports = Vehicle;
+  return Vehicle;
+};
