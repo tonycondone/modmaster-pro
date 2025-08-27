@@ -29,6 +29,7 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ github.head_ref || github.ref }}
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -187,11 +188,17 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
+        # Get the current branch name
+        BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+        echo "Current branch: $BRANCH_NAME"
+        
         git add PROGRESS_REPORT.md
         
         if ! git diff --staged --quiet; then
           git commit -m "🤖 Automated progress update - $(date '+%Y-%m-%d %H:%M')"
-          git push origin main
+          
+          # Push to the current branch
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
         else
           echo "No changes to commit"
         fi
