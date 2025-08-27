@@ -6,9 +6,9 @@ services:
     image: postgres:15-alpine
     container_name: modmaster-postgres
     environment:
-      POSTGRES_DB: modmaster_pro
-      POSTGRES_USER: modmaster_user
-      POSTGRES_PASSWORD: modmaster_password
+      POSTGRES_DB: ${POSTGRES_DB:-modmaster_pro}
+      POSTGRES_USER: ${POSTGRES_USER:-modmaster_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -17,7 +17,7 @@ services:
     networks:
       - modmaster-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U modmaster_user -d modmaster_pro"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-modmaster_user} -d ${POSTGRES_DB:-modmaster_pro}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -64,8 +64,8 @@ services:
     container_name: modmaster-n8n
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=modmaster123
+      - N8N_BASIC_AUTH_USER=${N8N_USERNAME:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
@@ -90,10 +90,10 @@ services:
     container_name: modmaster-backend-api
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://modmaster_user:modmaster_password@postgres:5432/modmaster_pro
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-modmaster_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-modmaster_pro}
       - REDIS_URL=redis://redis:6379
       - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - JWT_SECRET=${JWT_SECRET}
       - API_PORT=3000
     ports:
       - "3000:3000"
@@ -233,38 +233,41 @@ services:
     networks:
       - modmaster-network
 
-  # Grafana for Dashboards
+  # Grafana Dashboard
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.2.0
     container_name: modmaster-grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=modmaster123
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
     ports:
       - "3001:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./infrastructure/monitoring/grafana:/etc/grafana/provisioning
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - modmaster-network
     depends_on:
       - prometheus
 
-  # MinIO for File Storage (S3 Compatible)
+  # MinIO Object Storage
   minio:
     image: minio/minio:latest
     container_name: modmaster-minio
     environment:
-      - MINIO_ROOT_USER=modmaster_user
-      - MINIO_ROOT_PASSWORD=modmaster_password
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-modmaster_access_key}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
       - minio_data:/data
-    command: server /data --console-address ":9001"
     networks:
       - modmaster-network
+    command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
