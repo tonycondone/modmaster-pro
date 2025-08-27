@@ -10,13 +10,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     # Security
-    API_KEY: str = os.getenv("INTERNAL_API_KEY", "dev-api-key")
+    API_KEY: str = os.getenv("INTERNAL_API_KEY") or (lambda: (_ for _ in ()).throw(ValueError("INTERNAL_API_KEY environment variable is required for security")))()
     
     # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://modmaster_user:modmaster_password@postgres:5432/modmaster_pro"
-    )
+    DATABASE_URL: str = os.getenv("DATABASE_URL") or (lambda: (_ for _ in ()).throw(ValueError("DATABASE_URL environment variable is required")))()
     
     # Redis
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/1")

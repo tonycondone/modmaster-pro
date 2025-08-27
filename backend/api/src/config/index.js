@@ -15,12 +15,16 @@ const config = {
 
   // Database
   database: {
-    url: process.env.DATABASE_URL || 'postgresql://modmaster_user:modmaster_password@localhost:5432/modmaster_pro',
+    url: process.env.DATABASE_URL || (() => {
+      throw new Error('DATABASE_URL environment variable is required');
+    })(),
     host: process.env.POSTGRES_HOST || 'localhost',
     port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
     name: process.env.POSTGRES_DB || 'modmaster_pro',
     username: process.env.POSTGRES_USER || 'modmaster_user',
-    password: process.env.POSTGRES_PASSWORD || 'modmaster_password',
+    password: process.env.POSTGRES_PASSWORD || (() => {
+      throw new Error('POSTGRES_PASSWORD environment variable is required for security');
+    })(),
     sslMode: process.env.POSTGRES_SSL_MODE || 'disable',
     pool: {
       min: parseInt(process.env.DB_POOL_MIN, 10) || 2,
@@ -50,7 +54,9 @@ const config = {
 
   // JWT Authentication
   jwt: {
-    secret: process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_in_production',
+    secret: process.env.JWT_SECRET || (() => {
+      throw new Error('JWT_SECRET environment variable is required for security');
+    })(),
     algorithm: process.env.JWT_ALGORITHM || 'HS256',
     expiresIn: process.env.JWT_EXPIRES_IN || '24h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
@@ -115,7 +121,10 @@ const config = {
     n8n: {
       url: process.env.N8N_URL || 'http://localhost:5678',
       username: process.env.N8N_USERNAME || 'admin',
-      password: process.env.N8N_PASSWORD || 'modmaster123',
+      password: process.env.N8N_PASSWORD || (() => {
+        throw new Error('N8N_PASSWORD environment variable is required for security');
+      })(),
+      webhookToken: process.env.N8N_WEBHOOK_TOKEN || '',
     },
   },
 
@@ -160,11 +169,14 @@ const config = {
   storage: {
     provider: process.env.STORAGE_PROVIDER || 'minio',
     minio: {
-      endpoint: process.env.MINIO_ENDPOINT || 'localhost:9000',
-      accessKey: process.env.MINIO_ACCESS_KEY || 'modmaster_user',
-      secretKey: process.env.MINIO_SECRET_KEY || 'modmaster_password',
-      bucket: process.env.MINIO_BUCKET || 'modmaster-pro',
+      endpoint: process.env.MINIO_ENDPOINT || 'localhost',
+      port: parseInt(process.env.MINIO_PORT, 10) || 9000,
       useSSL: process.env.MINIO_USE_SSL === 'true',
+      accessKey: process.env.MINIO_ACCESS_KEY || 'modmaster_access_key',
+      secretKey: process.env.MINIO_SECRET_KEY || (() => {
+        throw new Error('MINIO_SECRET_KEY environment variable is required for security');
+      })(),
+      bucketName: process.env.MINIO_BUCKET_NAME || 'modmaster-pro',
     },
     aws: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
