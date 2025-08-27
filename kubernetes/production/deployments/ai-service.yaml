@@ -1,0 +1,223 @@
+# AI Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: modmaster-pro-prod
+  labels:
+    app: ai-service
+    tier: backend
+    component: ai
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+        tier: backend
+        component: ai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: modmaster-ai
+      nodeSelector:
+        accelerator: nvidia-tesla-t4  # Schedule on GPU nodes
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ai-service
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+      - name: model-downloader
+        image: modmasterpro/model-downloader:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          if [ ! -f /models/yolov8n.pt ]; then
+            echo "Downloading YOLOv8 model..."
+            wget -O /models/yolov8n.pt https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt
+          fi
+          if [ ! -f /models/resnet50.pth ]; then
+            echo "Downloading ResNet50 model..."
+            wget -O /models/resnet50.pth https://download.pytorch.org/models/resnet50-19c8e357.pth
+          fi
+        volumeMounts:
+        - name: models
+          mountPath: /models
+      containers:
+      - name: ai
+        image: modmasterpro/ai-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: modmaster-config
+        - secretRef:
+            name: modmaster-secrets
+        env:
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+        - name: TF_FORCE_GPU_ALLOW_GROWTH
+          value: "true"
+        - name: MODEL_CACHE_DIR
+          value: "/app/.cache/models"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: 1
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+          successThreshold: 1
+        volumeMounts:
+        - name: models
+          mountPath: /app/models
+          readOnly: true
+        - name: model-cache
+          mountPath: /app/.cache
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - SYS_NICE  # For GPU operations
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: model-cache
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: tmp
+        emptyDir: {}
+---
+# AI Service Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: modmaster-pro-prod
+  labels:
+    app: ai-service
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-service
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+---
+# AI Service HPA
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-service-hpa
+  namespace: modmaster-pro-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-service
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Pods
+    pods:
+      metric:
+        name: gpu_utilization_percentage
+      target:
+        type: AverageValue
+        averageValue: "80"
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600  # 10 minutes
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 300
+    scaleUp:
+      stabilizationWindowSeconds: 120
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 180
+---
+# AI Models PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-models-pvc
+  namespace: modmaster-pro-prod
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: ssd-multi-read
