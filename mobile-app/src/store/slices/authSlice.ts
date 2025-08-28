@@ -35,10 +35,10 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await apiService.post('/auth/login', credentials);
+      const response = await apiService.login(credentials);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      return rejectWithValue(apiService.handleError(error));
     }
   }
 );
@@ -53,10 +53,10 @@ export const register = createAsyncThunk(
     phone?: string;
   }, { rejectWithValue }) => {
     try {
-      const response = await apiService.post('/auth/register', userData);
+      const response = await apiService.register(userData);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      return rejectWithValue(apiService.handleError(error));
     }
   }
 );
@@ -65,10 +65,10 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await apiService.post('/auth/logout');
+      await apiService.logout();
       return null;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Logout failed');
+      return rejectWithValue(apiService.handleError(error));
     }
   }
 );
@@ -77,10 +77,34 @@ export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiService.get('/auth/me');
+      const response = await apiService.getUserProfile();
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get user');
+      return rejectWithValue(apiService.handleError(error));
+    }
+  }
+);
+
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const response = await apiService.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(apiService.handleError(error));
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async (data: { token: string; newPassword: string }, { rejectWithValue }) => {
+    try {
+      const response = await apiService.post('/auth/reset-password', data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(apiService.handleError(error));
     }
   }
 );

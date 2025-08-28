@@ -127,6 +127,159 @@ class ApiService {
     });
   }
 
+  // Vehicle methods
+  async getVehicles(page = 1, limit = 10) {
+    return this.get(`/vehicles?page=${page}&limit=${limit}`);
+  }
+
+  async getVehicleById(id: string) {
+    return this.get(`/vehicles/${id}`);
+  }
+
+  async createVehicle(vehicleData: any) {
+    return this.post('/vehicles', vehicleData);
+  }
+
+  async updateVehicle(id: string, vehicleData: any) {
+    return this.put(`/vehicles/${id}`, vehicleData);
+  }
+
+  async deleteVehicle(id: string) {
+    return this.delete(`/vehicles/${id}`);
+  }
+
+  // Part methods
+  async getParts(filters: any = {}, page = 1, limit = 20) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...filters,
+    });
+    return this.get(`/parts?${params}`);
+  }
+
+  async getPartById(id: string) {
+    return this.get(`/parts/${id}`);
+  }
+
+  async searchParts(query: string, filters: any = {}) {
+    const params = new URLSearchParams({
+      q: query,
+      ...filters,
+    });
+    return this.get(`/parts/search?${params}`);
+  }
+
+  async addToFavorites(partId: string) {
+    return this.post(`/parts/${partId}/favorite`);
+  }
+
+  async removeFromFavorites(partId: string) {
+    return this.delete(`/parts/${partId}/favorite`);
+  }
+
+  async getFavorites(page = 1, limit = 20) {
+    return this.get(`/parts/favorites?page=${page}&limit=${limit}`);
+  }
+
+  // Scan methods
+  async uploadScan(imageUri: string, vehicleId?: string, notes?: string) {
+    const formData = new FormData();
+    formData.append('image', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'scan.jpg',
+    } as any);
+    if (vehicleId) formData.append('vehicleId', vehicleId);
+    if (notes) formData.append('notes', notes);
+
+    return this.post('/scans/process', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
+
+  async getScans(page = 1, limit = 10, filters: any = {}) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...filters,
+    });
+    return this.get(`/scans?${params}`);
+  }
+
+  async getScanById(id: string) {
+    return this.get(`/scans/${id}`);
+  }
+
+  async deleteScan(id: string) {
+    return this.delete(`/scans/${id}`);
+  }
+
+  async retryScan(id: string) {
+    return this.post(`/scans/${id}/retry`);
+  }
+
+  // User methods
+  async getUserProfile() {
+    return this.get('/users/profile');
+  }
+
+  async updateUserProfile(userData: any) {
+    return this.put('/users/profile', userData);
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.put('/users/password', { currentPassword, newPassword });
+  }
+
+  async updateSettings(settings: any) {
+    return this.put('/users/settings', settings);
+  }
+
+  // Cart methods
+  async addToCart(partId: string, quantity: number) {
+    return this.post('/cart/add', { partId, quantity });
+  }
+
+  async updateCartItem(itemId: string, quantity: number) {
+    return this.put(`/cart/items/${itemId}`, { quantity });
+  }
+
+  async removeFromCart(itemId: string) {
+    return this.delete(`/cart/items/${itemId}`);
+  }
+
+  async getCart() {
+    return this.get('/cart');
+  }
+
+  async clearCart() {
+    return this.delete('/cart');
+  }
+
+  // Order methods
+  async createPaymentIntent(orderData: any) {
+    return this.post('/payments/create-intent', orderData);
+  }
+
+  async confirmPayment(paymentIntentId: string) {
+    return this.post('/payments/confirm', { paymentIntentId });
+  }
+
+  async getOrders(page = 1, limit = 10) {
+    return this.get(`/orders?page=${page}&limit=${limit}`);
+  }
+
+  async getOrderById(id: string) {
+    return this.get(`/orders/${id}`);
+  }
+
+  async cancelOrder(id: string) {
+    return this.post(`/orders/${id}/cancel`);
+  }
+
   // Error handling helper
   handleError(error: any): string {
     if (error.response?.data?.message) {
