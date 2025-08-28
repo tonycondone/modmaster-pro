@@ -24,10 +24,9 @@ const gracefulShutdown = async (signal) => {
     database.close()
       .then(() => {
         logger.info('Database connections closed');
-        return redis.close();
+        return redis.close().catch(() => logger.warn('Redis was not connected'));
       })
       .then(() => {
-        logger.info('Redis connections closed');
         logger.info('Graceful shutdown completed');
         process.exit(0);
       })
@@ -67,9 +66,13 @@ const startServer = async () => {
     await database.testConnection();
     logger.info('Database connection established');
     
-    // Test Redis connection
-    await redis.testConnection();
-    logger.info('Redis connection established');
+    // Test Redis connection (optional for development)
+    try {
+      await redis.testConnection();
+      logger.info('Redis connection established');
+    } catch (error) {
+      logger.warn('Redis connection failed (continuing without Redis):', error.message);
+    }
     
     // Start HTTP server
     server.listen(config.app.port, config.app.host, () => {
