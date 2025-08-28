@@ -83,6 +83,18 @@ const rateLimiters = {
     },
     standardHeaders: true,
     legacyHeaders: false
+  }),
+
+  // Search rate limiter
+  search: rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 50, // limit each IP to 50 search requests per minute
+    message: {
+      error: 'Too many search requests, please try again later.',
+      retryAfter: 60
+    },
+    standardHeaders: true,
+    legacyHeaders: false
   })
 };
 

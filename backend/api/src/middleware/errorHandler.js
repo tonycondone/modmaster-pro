@@ -1,6 +1,32 @@
 const logger = require('../utils/logger');
 const config = require('../config');
 
+// Custom error classes
+class AuthenticationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AuthenticationError';
+    this.statusCode = 401;
+  }
+}
+
+class AuthorizationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AuthorizationError';
+    this.statusCode = 403;
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = 'ValidationError';
+    this.statusCode = 400;
+    this.details = details;
+  }
+}
+
 // Async handler wrapper to catch async errors
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -163,5 +189,8 @@ module.exports = {
   validationErrorHandler,
   requestLogger,
   sendErrorResponse,
-  sendSuccessResponse
+  sendSuccessResponse,
+  AuthenticationError,
+  AuthorizationError,
+  ValidationError
 }; 
