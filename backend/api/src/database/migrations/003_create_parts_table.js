@@ -1,62 +1,59 @@
 exports.up = function(knex) {
-  return knex.schema.createTable('parts', (table) => {
+  return knex.schema.createTable('parts', table => {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.string('part_number', 100).notNullable();
-    table.string('universal_part_number', 100);
-    table.string('name', 255).notNullable();
+    table.string('name').notNullable();
     table.text('description');
-    table.string('category', 100).notNullable();
-    table.string('subcategory', 100);
-    table.string('manufacturer', 100).notNullable();
-    table.string('brand', 100);
-    table.enum('brand_tier', ['oem', 'premium_aftermarket', 'budget_aftermarket', 'universal']).defaultTo('universal');
-    table.decimal('price_min', 10, 2);
-    table.decimal('price_max', 10, 2);
-    table.decimal('msrp', 10, 2);
-    table.float('availability_score').defaultTo(0);
+    table.string('category').notNullable();
+    table.string('subcategory');
+    table.string('manufacturer');
+    table.string('brand');
+    table.string('oem_number').index();
+    table.string('universal_part_number').index();
+    table.jsonb('alternate_part_numbers').defaultTo('[]');
+    table.enum('condition', ['new', 'used', 'refurbished', 'remanufactured']).defaultTo('new');
+    table.decimal('price', 10, 2);
+    table.jsonb('price_history').defaultTo('[]');
+    table.integer('quantity').defaultTo(1);
     table.jsonb('specifications').defaultTo('{}');
-    table.jsonb('performance_data').defaultTo('{}');
+    table.jsonb('dimensions').defaultTo('{}');
+    table.decimal('weight', 8, 2);
+    table.string('weight_unit').defaultTo('lbs');
+    table.jsonb('vehicle_compatibility').defaultTo('[]');
     table.jsonb('images').defaultTo('[]');
-    table.jsonb('installation_media').defaultTo('{}');
-    table.jsonb('compatibility_rules').defaultTo('{}');
-    table.float('trending_score').defaultTo(0);
-    table.float('quality_rating').defaultTo(0);
-    table.float('reliability_score').defaultTo(0);
-    table.jsonb('warranty_standard').defaultTo('{}');
-    table.jsonb('certifications').defaultTo('[]');
-    table.jsonb('country_restrictions').defaultTo('[]');
-    table.jsonb('seasonal_relevance').defaultTo('{}');
-    table.jsonb('target_audience').defaultTo('{}');
-    table.integer('social_mentions').defaultTo(0);
-    table.boolean('expert_endorsed').defaultTo(false);
-    table.float('community_rating').defaultTo(0);
-    table.float('installation_difficulty').defaultTo(5);
-    table.jsonb('maintenance_requirements').defaultTo('{}');
-    table.jsonb('environmental_impact').defaultTo('{}');
-    table.text('legal_considerations');
-    table.boolean('is_active').defaultTo(true);
-    table.boolean('is_verified').defaultTo(false);
-    table.timestamp('verified_at');
-    table.string('verified_by');
+    table.string('primary_image_url');
+    table.uuid('seller_id').references('id').inTable('users');
+    table.enum('listing_type', ['marketplace', 'user', 'affiliate']).defaultTo('marketplace');
+    table.jsonb('marketplace_data').defaultTo('{}');
+    table.string('location');
+    table.point('coordinates');
+    table.boolean('shipping_available').defaultTo(true);
+    table.decimal('shipping_cost', 8, 2);
+    table.jsonb('shipping_options').defaultTo('[]');
+    table.decimal('average_rating', 3, 2).defaultTo(0);
+    table.integer('review_count').defaultTo(0);
+    table.integer('view_count').defaultTo(0);
+    table.integer('save_count').defaultTo(0);
+    table.integer('scan_count').defaultTo(0);
+    table.jsonb('tags').defaultTo('[]');
+    table.enum('status', ['active', 'sold', 'pending', 'deleted']).defaultTo('active');
+    table.timestamp('listed_at').defaultTo(knex.fn.now());
+    table.timestamp('sold_at');
+    table.timestamp('deleted_at');
     table.timestamps(true, true);
     
     // Indexes
-    table.index('part_number');
-    table.index('universal_part_number');
-    table.index('name');
-    table.index(['category', 'subcategory']);
+    table.index('category');
     table.index('manufacturer');
-    table.index('brand');
-    table.index('is_active');
-    table.index('trending_score');
-    table.index('quality_rating');
+    table.index('condition');
+    table.index('status');
+    table.index('seller_id');
     table.index('created_at');
     
-    // Full text search
-    table.index(knex.raw('to_tsvector(\'english\', name || \' \' || coalesce(description, \'\'))'), 'parts_search_idx', 'gin');
+    // Full text search index (PostgreSQL specific)
+    table.index(knex.raw('to_tsvector(\'english\', name || \' \' || COALESCE(description, \'\'))'), 'parts_search_idx', 'gin');
   });
 };
 
 exports.down = function(knex) {
-  return knex.schema.dropTableIfExists('parts');
+  return knex.schema.dropTable('parts');
 };

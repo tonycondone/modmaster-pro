@@ -54,6 +54,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 autopush.sh
+actual_codebase_status.md
 # Runtime data
 pids/
 *.pid
