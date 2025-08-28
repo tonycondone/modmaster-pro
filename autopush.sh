@@ -2,11 +2,23 @@
 
 # === Auto-push script with conflict resolution ===
 # This script automatically commits and pushes changes while handling common git issues
+#
+# Usage:
+#   ./autopush.sh                    # Run with default 5-second interval
+#   AUTOPUSH_SLEEP=10 ./autopush.sh  # Run with 10-second interval
+#   AUTOPUSH_SLEEP=1 ./autopush.sh   # Run with 1-second interval
+#
+# Features:
+#   - Automatic conflict resolution
+#   - Retry logic with configurable attempts
+#   - Colored output for better visibility
+#   - Safe force push only on feature branches
+#   - Graceful interruption handling
 
 # Configuration
 BRANCH_NAME=$(git branch --show-current)
 REMOTE_NAME="origin"
-SLEEP_INTERVAL=5
+SLEEP_INTERVAL=${AUTOPUSH_SLEEP:-5}  # Default 5 seconds, can be overridden with AUTOPUSH_SLEEP env var
 MAX_RETRIES=3
 
 # Colors for output
@@ -41,8 +53,11 @@ sync_with_remote() {
     git fetch $REMOTE_NAME
     
     # Check if we're behind remote
-    if git status --porcelain | grep -q "behind"; then
-        print_warning "Local branch is behind remote. Attempting to pull..."
+    local behind_count=$(git rev-list --count HEAD..$REMOTE_NAME/$BRANCH_NAME 2>/dev/null || echo "0")
+    local ahead_count=$(git rev-list --count $REMOTE_NAME/$BRANCH_NAME..HEAD 2>/dev/null || echo "0")
+    
+    if [ "$behind_count" -gt 0 ]; then
+        print_warning "Local branch is $behind_count commits behind remote. Attempting to pull..."
         
         # Try to pull with rebase first
         if git pull --rebase $REMOTE_NAME $BRANCH_NAME; then
@@ -57,6 +72,10 @@ sync_with_remote() {
                 return 1
             fi
         fi
+    elif [ "$ahead_count" -gt 0 ]; then
+        print_status "Local branch is $ahead_count commits ahead of remote"
+    else
+        print_status "Local branch is up to date with remote"
     fi
 }
 
@@ -97,6 +116,14 @@ commit_and_push() {
                     print_status "Retrying push..."
                     continue
                 else
+                    # If sync failed, try force push as last resort (only on feature branches)
+                    if [ "$BRANCH_NAME" != "main" ] && [ "$BRANCH_NAME" != "master" ]; then
+                        print_warning "Attempting force push as last resort..."
+                        if git push --force-with-lease $REMOTE_NAME $BRANCH_NAME; then
+                            print_success "Force push successful"
+                            return 0
+                        fi
+                    fi
                     print_error "Failed to sync with remote"
                     return 1
                 fi
@@ -110,6 +137,18 @@ commit_and_push() {
 
 # Main execution
 main() {
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        print_error "Not in a git repository. Please run this script from a git repository."
+        exit 1
+    fi
+    
+    # Check if remote exists
+    if ! git remote get-url $REMOTE_NAME > /dev/null 2>&1; then
+        print_error "Remote '$REMOTE_NAME' not found. Please check your git configuration."
+        exit 1
+    fi
+    
     print_status "Starting auto-push loop for branch: $BRANCH_NAME"
     print_status "Remote: $REMOTE_NAME"
     print_status "Sleep interval: ${SLEEP_INTERVAL}s"
