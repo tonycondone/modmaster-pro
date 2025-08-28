@@ -11,39 +11,28 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
-  Dimensions,
   Image
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { login } from '../../store/slices/authSlice';
+import LottieView from 'lottie-react-native';
+import { authService } from '../../services/authService';
 import { colors, fonts, spacing } from '../../theme';
-import Logo from '../../components/Logo';
-import SocialLoginButtons from '../../components/SocialLoginButtons';
 
-const { width } = Dimensions.get('window');
-
-const loginSchema = Yup.object().shape({
+const forgotPasswordSchema = Yup.object().shape({
   email: Yup.string()
     .email('Invalid email address')
-    .required('Email is required'),
-  password: Yup.string()
-    .min(8, 'Password must be at least 8 characters')
-    .required('Password is required')
+    .required('Email is required')
 });
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state: any) => state.auth);
-  
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -62,27 +51,62 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
-  const handleLogin = async (values: { email: string; password: string }) => {
+  const handleResetPassword = async (values: { email: string }) => {
     try {
+      setLoading(true);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const result = await dispatch(login({ ...values, rememberMe })).unwrap();
       
-      if (result.requiresTwoFactor) {
-        navigation.navigate('TwoFactorScreen', { sessionToken: result.sessionToken });
-      } else {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }]
-        });
-      }
-    } catch (err: any) {
+      await authService.forgotPassword(values.email);
+      setEmailSent(true);
+      
       Alert.alert(
-        'Login Failed',
-        err.message || 'Invalid email or password. Please try again.',
+        'Email Sent!',
+        'We\'ve sent password reset instructions to your email address.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack()
+          }
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to send reset email. Please try again.',
         [{ text: 'OK' }]
       );
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (emailSent) {
+    return (
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#0f3460']}
+        style={styles.container}
+      >
+        <View style={styles.successContainer}>
+          <LottieView
+            source={require('../../assets/animations/email-sent.json')}
+            autoPlay
+            loop={false}
+            style={styles.successAnimation}
+          />
+          <Text style={styles.successTitle}>Check Your Email</Text>
+          <Text style={styles.successText}>
+            We've sent password reset instructions to your email address.
+          </Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.navigate('LoginScreen')}
+          >
+            <Text style={styles.backButtonText}>Back to Login</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient
@@ -107,16 +131,28 @@ export default function LoginScreen() {
               }
             ]}
           >
-            <View style={styles.logoContainer}>
-              <Logo size={80} />
-              <Text style={styles.title}>ModMaster Pro</Text>
-              <Text style={styles.subtitle}>Automotive Intelligence Platform</Text>
+            <TouchableOpacity
+              style={styles.headerBackButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Icon name="arrow-left" size={24} color={colors.white} />
+            </TouchableOpacity>
+
+            <View style={styles.iconContainer}>
+              <View style={styles.iconBackground}>
+                <Icon name="lock-reset" size={60} color={colors.primary} />
+              </View>
             </View>
 
+            <Text style={styles.title}>Forgot Password?</Text>
+            <Text style={styles.subtitle}>
+              Don't worry! Enter your email address and we'll send you instructions to reset your password.
+            </Text>
+
             <Formik
-              initialValues={{ email: '', password: '' }}
-              validationSchema={loginSchema}
-              onSubmit={handleLogin}
+              initialValues={{ email: '' }}
+              validationSchema={forgotPasswordSchema}
+              onSubmit={handleResetPassword}
             >
               {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
                 <View style={styles.formContainer}>
@@ -124,7 +160,7 @@ export default function LoginScreen() {
                     <Icon name="email-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
                     <TextInput
                       style={styles.input}
-                      placeholder="Email Address"
+                      placeholder="Enter your email address"
                       placeholderTextColor={colors.textSecondary}
                       value={values.email}
                       onChangeText={handleChange('email')}
@@ -132,63 +168,16 @@ export default function LoginScreen() {
                       autoCapitalize="none"
                       autoCorrect={false}
                       keyboardType="email-address"
-                      returnKeyType="next"
+                      returnKeyType="done"
+                      onSubmitEditing={() => handleSubmit()}
                     />
                   </View>
                   {touched.email && errors.email && (
                     <Text style={styles.errorText}>{errors.email}</Text>
                   )}
 
-                  <View style={styles.inputContainer}>
-                    <Icon name="lock-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Password"
-                      placeholderTextColor={colors.textSecondary}
-                      value={values.password}
-                      onChangeText={handleChange('password')}
-                      onBlur={handleBlur('password')}
-                      secureTextEntry={!showPassword}
-                      returnKeyType="done"
-                      onSubmitEditing={() => handleSubmit()}
-                    />
-                    <TouchableOpacity
-                      onPress={() => setShowPassword(!showPassword)}
-                      style={styles.eyeIcon}
-                    >
-                      <Icon
-                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                        size={20}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {touched.password && errors.password && (
-                    <Text style={styles.errorText}>{errors.password}</Text>
-                  )}
-
-                  <View style={styles.optionsContainer}>
-                    <TouchableOpacity
-                      style={styles.rememberContainer}
-                      onPress={() => setRememberMe(!rememberMe)}
-                    >
-                      <Icon
-                        name={rememberMe ? 'checkbox-marked' : 'checkbox-blank-outline'}
-                        size={20}
-                        color={rememberMe ? colors.primary : colors.textSecondary}
-                      />
-                      <Text style={styles.rememberText}>Remember me</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => navigation.navigate('ForgotPasswordScreen')}
-                    >
-                      <Text style={styles.forgotText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-                  </View>
-
                   <TouchableOpacity
-                    style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+                    style={[styles.resetButton, loading && styles.resetButtonDisabled]}
                     onPress={() => handleSubmit()}
                     disabled={loading}
                   >
@@ -196,12 +185,12 @@ export default function LoginScreen() {
                       colors={['#e94560', '#ff6b6b']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
-                      style={styles.loginButtonGradient}
+                      style={styles.resetButtonGradient}
                     >
                       {loading ? (
                         <ActivityIndicator color="white" />
                       ) : (
-                        <Text style={styles.loginButtonText}>Sign In</Text>
+                        <Text style={styles.resetButtonText}>Send Reset Link</Text>
                       )}
                     </LinearGradient>
                   </TouchableOpacity>
@@ -209,18 +198,24 @@ export default function LoginScreen() {
               )}
             </Formik>
 
-            <View style={styles.dividerContainer}>
+            <View style={styles.alternativeContainer}>
               <View style={styles.divider} />
-              <Text style={styles.dividerText}>OR</Text>
+              <Text style={styles.alternativeText}>Or</Text>
               <View style={styles.divider} />
             </View>
 
-            <SocialLoginButtons />
+            <TouchableOpacity
+              style={styles.contactSupport}
+              onPress={() => navigation.navigate('SupportScreen')}
+            >
+              <Icon name="headset" size={20} color={colors.primary} />
+              <Text style={styles.contactSupportText}>Contact Support</Text>
+            </TouchableOpacity>
 
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
-                <Text style={styles.signupLink}>Sign Up</Text>
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Remember your password? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
+                <Text style={styles.loginLink}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -245,21 +240,36 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg
   },
-  logoContainer: {
+  headerBackButton: {
+    alignSelf: 'flex-start',
+    marginBottom: spacing.xl
+  },
+  iconContainer: {
     alignItems: 'center',
     marginBottom: spacing.xl
   },
+  iconBackground: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(233, 69, 96, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontFamily: fonts.bold,
     color: colors.white,
-    marginTop: spacing.md
+    textAlign: 'center',
+    marginBottom: spacing.md
   },
   subtitle: {
     fontSize: 16,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
-    marginTop: spacing.xs
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+    lineHeight: 24
   },
   formContainer: {
     marginBottom: spacing.lg
@@ -284,9 +294,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.white
   },
-  eyeIcon: {
-    padding: spacing.xs
-  },
   errorText: {
     color: colors.error,
     fontSize: 12,
@@ -295,46 +302,25 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     marginLeft: spacing.md
   },
-  optionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg
-  },
-  rememberContainer: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  rememberText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    marginLeft: spacing.xs
-  },
-  forgotText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontFamily: fonts.medium
-  },
-  loginButton: {
+  resetButton: {
     borderRadius: 12,
     overflow: 'hidden',
     marginTop: spacing.sm
   },
-  loginButtonDisabled: {
+  resetButtonDisabled: {
     opacity: 0.7
   },
-  loginButtonGradient: {
+  resetButtonGradient: {
     paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center'
   },
-  loginButtonText: {
+  resetButtonText: {
     color: colors.white,
     fontSize: 18,
     fontFamily: fonts.semiBold
   },
-  dividerContainer: {
+  alternativeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: spacing.lg
@@ -344,25 +330,77 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.2)'
   },
-  dividerText: {
+  alternativeText: {
     color: colors.textSecondary,
     fontSize: 14,
     fontFamily: fonts.regular,
     marginHorizontal: spacing.md
   },
-  signupContainer: {
+  contactSupport: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: 'rgba(233, 69, 96, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary
+  },
+  contactSupportText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    marginLeft: spacing.sm
+  },
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.lg
+    marginTop: spacing.xl
   },
-  signupText: {
+  loginText: {
     color: colors.textSecondary,
     fontSize: 16,
     fontFamily: fonts.regular
   },
-  signupLink: {
+  loginLink: {
     color: colors.primary,
+    fontSize: 16,
+    fontFamily: fonts.semiBold
+  },
+  successContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg
+  },
+  successAnimation: {
+    width: 200,
+    height: 200
+  },
+  successTitle: {
+    fontSize: 24,
+    fontFamily: fonts.bold,
+    color: colors.white,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md
+  },
+  successText: {
+    fontSize: 16,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xl
+  },
+  backButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: 12
+  },
+  backButtonText: {
+    color: colors.white,
     fontSize: 16,
     fontFamily: fonts.semiBold
   }
