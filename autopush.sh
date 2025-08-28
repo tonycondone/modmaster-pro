@@ -6,7 +6,7 @@
 # Configuration
 BRANCH_NAME=$(git branch --show-current)
 REMOTE_NAME="origin"
-SLEEP_INTERVAL=2
+SLEEP_INTERVAL=30
 MAX_RETRIES=3
 
 # Colors for output
