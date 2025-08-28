@@ -25,6 +25,7 @@ const recommendationRoutes = require('./routes/recommendations');
 const marketplaceRoutes = require('./routes/marketplace');
 const projectRoutes = require('./routes/projects');
 const healthRoutes = require('./routes/health');
+const paymentRoutes = require('./routes/payments.routes');
 
 // Import middleware
 const { initializePassport, requireAuth } = require('./middleware/auth');
@@ -154,6 +155,7 @@ app.use('/api/v1/scans', requireAuth, scanRoutes);
 app.use('/api/v1/recommendations', requireAuth, recommendationRoutes);
 app.use('/api/v1/marketplace', marketplaceRoutes);
 app.use('/api/v1/projects', requireAuth, projectRoutes);
+app.use('/api/v1/payments', requireAuth, paymentRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
