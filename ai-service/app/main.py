@@ -8,8 +8,8 @@ import sys
 from app.config import settings
 from app.api import health, scan, recommendation, analysis
 from app.core.model_manager import ModelManager
-from app.db.redis_client import redis_client
-from app.db.postgres import database
+from app.db.redis_client import init_redis, close_redis
+from app.db.postgres import init_database, close_database
 
 # Configure logger
 logger.remove()
@@ -35,8 +35,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting AI Service...")
     
     # Connect to databases
-    await database.connect()
-    logger.info("Connected to PostgreSQL")
+    await init_database()
+    await init_redis()
+    logger.info("Connected to databases")
     
     # Load AI models
     await model_manager.load_models()
@@ -46,8 +47,8 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down AI Service...")
-    await database.disconnect()
-    await redis_client.close()
+    await close_database()
+    await close_redis()
     logger.info("Cleanup completed")
 
 # Create FastAPI app
