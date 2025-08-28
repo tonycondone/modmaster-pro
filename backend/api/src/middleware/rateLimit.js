@@ -107,6 +107,18 @@ const rateLimiters = {
     },
     standardHeaders: true,
     legacyHeaders: false
+  }),
+
+  // Scraping rate limiter (very strict for expensive operations)
+  scraping: rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // limit each IP to 10 scraping requests per hour
+    message: {
+      error: 'Too many scraping requests, please try again later.',
+      retryAfter: 60 * 60
+    },
+    standardHeaders: true,
+    legacyHeaders: false
   })
 };
 
