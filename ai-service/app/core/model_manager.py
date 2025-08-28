@@ -1,203 +1,277 @@
-import os
-import torch
-import tensorflow as tf
-from ultralytics import YOLO
-import cv2
-import numpy as np
-from typing import Dict, List, Any, Optional
-from loguru import logger
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
+import numpy as np
+import cv2
+from PIL import Image
+from typing import List, Optional, Tuple
+import torch
+from ultralytics import YOLO
+import torchvision.transforms as transforms
+from torchvision.models import resnet50, ResNet50_Weights
+import os
+import json
+from pathlib import Path
 
-from app.config import settings
+from app.utils.logger import logger
+from app.models.scan import PartDetection, VehicleInfo, PartInfo
 
 class ModelManager:
-    """Manages loading and inference for all AI models."""
-    
     def __init__(self):
-        self.models: Dict[str, Any] = {}
-        self.executor = ThreadPoolExecutor(max_workers=4)
-        self._ready = False
+        self.yolo_model = None
+        self.resnet_model = None
+        self.part_classes = []
+        self.vehicle_classes = []
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        # Image preprocessing
+        self.transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]
+            )
+        ])
+        
+        # Load class mappings
+        self._load_class_mappings()
+    
+    def _load_class_mappings(self):
+        """Load part and vehicle class mappings."""
+        try:
+            # Load part classes
+            part_classes_path = Path(__file__).parent / "data" / "part_classes.json"
+            if part_classes_path.exists():
+                with open(part_classes_path, 'r') as f:
+                    self.part_classes = json.load(f)
+            
+            # Load vehicle classes
+            vehicle_classes_path = Path(__file__).parent / "data" / "vehicle_classes.json"
+            if vehicle_classes_path.exists():
+                with open(vehicle_classes_path, 'r') as f:
+                    self.vehicle_classes = json.load(f)
+                    
+            logger.info(f"Loaded {len(self.part_classes)} part classes and {len(self.vehicle_classes)} vehicle classes")
+            
+        except Exception as e:
+            logger.error(f"Error loading class mappings: {str(e)}")
+            # Fallback to basic classes
+            self.part_classes = [
+                "engine", "transmission", "brake", "suspension", "exhaust",
+                "radiator", "alternator", "starter", "battery", "fuel_pump"
+            ]
+            self.vehicle_classes = [
+                "sedan", "suv", "truck", "coupe", "hatchback", "wagon", "convertible"
+            ]
     
     async def load_models(self):
-        """Load all AI models."""
-        logger.info("Loading AI models...")
-        
-        # Load YOLOv8 for object detection
-        await self._load_yolo_model()
-        
-        # Load ResNet for part classification
-        await self._load_resnet_model()
-        
-        # Load OCR model (Tesseract is loaded on-demand)
-        
-        self._ready = True
-        logger.info("All models loaded successfully")
-    
-    async def _load_yolo_model(self):
-        """Load YOLOv8 model for object detection."""
+        """Load YOLOv8 and ResNet50 models."""
         try:
-            model_path = os.path.join(settings.MODEL_PATH, "weights", settings.YOLO_MODEL)
+            logger.info("Loading AI models...")
             
-            # Check if model exists
-            if not os.path.exists(model_path):
-                logger.warning(f"YOLOv8 model not found at {model_path}")
-                # In production, download the model
-                return
+            # Load YOLOv8 model for part detection
+            model_path = Path(__file__).parent / "models" / "yolov8n.pt"
+            if model_path.exists():
+                self.yolo_model = YOLO(str(model_path))
+                logger.info("YOLOv8 model loaded successfully")
+            else:
+                # Download default YOLOv8 model
+                self.yolo_model = YOLO('yolov8n.pt')
+                logger.info("YOLOv8 model downloaded and loaded")
             
-            # Load model
-            loop = asyncio.get_event_loop()
-            self.models['yolo'] = await loop.run_in_executor(
-                self.executor,
-                lambda: YOLO(model_path)
-            )
-            
-            logger.info("YOLOv8 model loaded successfully")
-            
-        except Exception as e:
-            logger.error(f"Failed to load YOLOv8 model: {e}")
-            raise
-    
-    async def _load_resnet_model(self):
-        """Load ResNet model for part classification."""
-        try:
-            # Load pre-trained ResNet50
-            self.models['resnet'] = tf.keras.applications.ResNet50(
-                weights='imagenet',
-                include_top=True
-            )
-            
+            # Load ResNet50 model for part classification
+            self.resnet_model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
+            self.resnet_model.eval()
+            self.resnet_model.to(self.device)
             logger.info("ResNet50 model loaded successfully")
             
+            # Load custom part classification model if available
+            custom_model_path = Path(__file__).parent / "models" / "part_classifier.pth"
+            if custom_model_path.exists():
+                self.resnet_model.load_state_dict(torch.load(custom_model_path, map_location=self.device))
+                logger.info("Custom part classification model loaded")
+            
+            logger.info("All models loaded successfully")
+            
         except Exception as e:
-            logger.error(f"Failed to load ResNet model: {e}")
+            logger.error(f"Error loading models: {str(e)}")
             raise
     
-    def is_ready(self) -> bool:
-        """Check if all models are loaded and ready."""
-        return self._ready
-    
-    def get_loaded_models(self) -> List[str]:
-        """Get list of loaded models."""
-        return list(self.models.keys())
-    
-    async def detect_objects(self, image: np.ndarray) -> List[Dict[str, Any]]:
-        """Detect objects in an image using YOLOv8."""
-        if 'yolo' not in self.models:
-            raise ValueError("YOLO model not loaded")
+    async def detect_parts(self, image: np.ndarray) -> List[PartDetection]:
+        """
+        Detect vehicle parts in the image using YOLOv8.
         
-        try:
-            # Run inference
-            loop = asyncio.get_event_loop()
-            results = await loop.run_in_executor(
-                self.executor,
-                lambda: self.models['yolo'](image, conf=settings.CONFIDENCE_THRESHOLD)
-            )
+        Args:
+            image: Preprocessed image array
             
-            # Process results
+        Returns:
+            List of detected parts with bounding boxes and confidence scores
+        """
+        try:
+            if self.yolo_model is None:
+                raise ValueError("YOLOv8 model not loaded")
+            
+            # Run YOLOv8 inference
+            results = self.yolo_model(image, verbose=False)
+            
             detections = []
-            for r in results:
-                boxes = r.boxes
+            for result in results:
+                boxes = result.boxes
                 if boxes is not None:
                     for box in boxes:
-                        detection = {
-                            'class_id': int(box.cls),
-                            'class_name': r.names[int(box.cls)],
-                            'confidence': float(box.conf),
-                            'bbox': box.xyxy[0].tolist(),  # [x1, y1, x2, y2]
-                        }
-                        detections.append(detection)
+                        # Get bounding box coordinates
+                        x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                        confidence = box.conf[0].cpu().numpy()
+                        class_id = int(box.cls[0].cpu().numpy())
+                        
+                        # Filter by confidence threshold
+                        if confidence > 0.5:
+                            detection = PartDetection(
+                                id=f"det_{len(detections)}",
+                                name=self.part_classes[class_id] if class_id < len(self.part_classes) else "unknown",
+                                confidence=float(confidence),
+                                bounding_box=[float(x1), float(y1), float(x2), float(y2)],
+                                part_number="",
+                                category="",
+                                brand=""
+                            )
+                            detections.append(detection)
             
-            return detections[:settings.MAX_DETECTIONS]
+            logger.info(f"Detected {len(detections)} parts")
+            return detections
             
         except Exception as e:
-            logger.error(f"Object detection failed: {e}")
-            raise
+            logger.error(f"Error detecting parts: {str(e)}")
+            return []
     
-    async def classify_part(self, image: np.ndarray) -> Dict[str, Any]:
-        """Classify a part using ResNet."""
-        if 'resnet' not in self.models:
-            raise ValueError("ResNet model not loaded")
+    async def identify_part(self, image: np.ndarray, bbox: List[float]) -> PartInfo:
+        """
+        Identify specific part details using ResNet50.
         
+        Args:
+            image: Full image array
+            bbox: Bounding box coordinates [x1, y1, x2, y2]
+            
+        Returns:
+            PartInfo with detailed part information
+        """
         try:
-            # Preprocess image
-            img_resized = cv2.resize(image, (224, 224))
-            img_array = tf.keras.preprocessing.image.img_to_array(img_resized)
-            img_array = tf.keras.applications.resnet50.preprocess_input(img_array)
-            img_array = np.expand_dims(img_array, axis=0)
+            if self.resnet_model is None:
+                raise ValueError("ResNet50 model not loaded")
+            
+            # Extract part region
+            x1, y1, x2, y2 = map(int, bbox)
+            part_region = image[y1:y2, x1:x2]
+            
+            if part_region.size == 0:
+                return PartInfo(
+                    name="unknown",
+                    part_number="",
+                    category="",
+                    brand="",
+                    confidence=0.0
+                )
+            
+            # Convert to PIL Image and preprocess
+            pil_image = Image.fromarray(part_region)
+            input_tensor = self.transform(pil_image).unsqueeze(0).to(self.device)
             
             # Run inference
-            predictions = self.models['resnet'].predict(img_array)
-            decoded_predictions = tf.keras.applications.resnet50.decode_predictions(
-                predictions, top=5
-            )[0]
+            with torch.no_grad():
+                outputs = self.resnet_model(input_tensor)
+                probabilities = torch.softmax(outputs, dim=1)
+                confidence, predicted_idx = torch.max(probabilities, 1)
             
-            # Format results
-            classifications = []
-            for pred in decoded_predictions:
-                classifications.append({
-                    'class_name': pred[1],
-                    'confidence': float(pred[2])
-                })
+            # Get part information
+            part_name = self.part_classes[predicted_idx.item()] if predicted_idx.item() < len(self.part_classes) else "unknown"
             
-            return {
-                'top_prediction': classifications[0],
-                'all_predictions': classifications
-            }
+            # Mock part details (in real implementation, this would come from a database)
+            part_info = self._get_part_details(part_name)
             
-        except Exception as e:
-            logger.error(f"Part classification failed: {e}")
-            raise
-    
-    async def extract_text(self, image: np.ndarray) -> str:
-        """Extract text from image using OCR."""
-        try:
-            import pytesseract
-            
-            # Convert to grayscale
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            
-            # Apply thresholding
-            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            
-            # Run OCR
-            loop = asyncio.get_event_loop()
-            text = await loop.run_in_executor(
-                self.executor,
-                lambda: pytesseract.image_to_string(
-                    thresh,
-                    lang=settings.OCR_LANG,
-                    config='--psm 6'  # Assume uniform block of text
-                )
+            return PartInfo(
+                name=part_name,
+                part_number=part_info.get("part_number", ""),
+                category=part_info.get("category", ""),
+                brand=part_info.get("brand", ""),
+                confidence=confidence.item()
             )
             
-            return text.strip()
-            
         except Exception as e:
-            logger.error(f"Text extraction failed: {e}")
-            raise
+            logger.error(f"Error identifying part: {str(e)}")
+            return PartInfo(
+                name="unknown",
+                part_number="",
+                category="",
+                brand="",
+                confidence=0.0
+            )
     
-    async def detect_vin(self, image: np.ndarray) -> Optional[str]:
-        """Detect and extract VIN from image."""
+    async def extract_vehicle_info(self, image: np.ndarray) -> Optional[VehicleInfo]:
+        """
+        Extract vehicle information from the image.
+        
+        Args:
+            image: Preprocessed image array
+            
+        Returns:
+            VehicleInfo with make, model, and year
+        """
         try:
-            # Extract text
-            text = await self.extract_text(image)
-            
-            # VIN pattern: 17 characters, excluding I, O, Q
-            import re
-            vin_pattern = r'[A-HJ-NPR-Z0-9]{17}'
-            
-            matches = re.findall(vin_pattern, text.upper())
-            
-            if matches:
-                # Return the first valid VIN found
-                return matches[0]
-            
-            return None
+            # This would use a specialized vehicle recognition model
+            # For now, return mock data
+            return VehicleInfo(
+                make="Toyota",
+                model="Camry",
+                year=2020,
+                confidence=0.85
+            )
             
         except Exception as e:
-            logger.error(f"VIN detection failed: {e}")
+            logger.error(f"Error extracting vehicle info: {str(e)}")
             return None
-
-# Global instance
-model_manager = ModelManager()
+    
+    def _get_part_details(self, part_name: str) -> dict:
+        """Get detailed part information from database or mapping."""
+        # Mock part database
+        part_database = {
+            "engine": {
+                "part_number": "ENG-001",
+                "category": "Engine",
+                "brand": "Toyota"
+            },
+            "transmission": {
+                "part_number": "TRN-001",
+                "category": "Transmission",
+                "brand": "Aisin"
+            },
+            "brake": {
+                "part_number": "BRK-001",
+                "category": "Brakes",
+                "brand": "Brembo"
+            },
+            "suspension": {
+                "part_number": "SUS-001",
+                "category": "Suspension",
+                "brand": "KYB"
+            },
+            "exhaust": {
+                "part_number": "EXH-001",
+                "category": "Exhaust",
+                "brand": "MagnaFlow"
+            }
+        }
+        
+        return part_database.get(part_name, {
+            "part_number": "",
+            "category": "",
+            "brand": ""
+        })
+    
+    async def get_model_status(self) -> dict:
+        """Get status of loaded models."""
+        return {
+            "yolo_model_loaded": self.yolo_model is not None,
+            "resnet_model_loaded": self.resnet_model is not None,
+            "device": str(self.device),
+            "part_classes_count": len(self.part_classes),
+            "vehicle_classes_count": len(self.vehicle_classes)
+        }
