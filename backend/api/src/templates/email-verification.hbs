@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - ModMaster Pro</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Remove default styling */
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        /* Mobile styles */
+        @media screen and (max-width: 600px) {
+            .mobile-hide { display: none !important; }
+            .mobile-center { text-align: center !important; }
+            .mobile-padding { padding: 20px !important; }
+            table.responsive-table { width: 100% !important; }
+            .code-box { font-size: 24px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table class="responsive-table" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 20px; background-color: #10b981; border-radius: 8px 8px 0 0;">
+                            <img src="https://modmasterpro.com/logo-white.png" alt="ModMaster Pro" width="200" style="display: block; max-width: 100%; height: auto;">
+                            <h1 style="color: #ffffff; font-size: 28px; margin: 20px 0 0 0; font-weight: bold;">Verify Your Email Address</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 40px 40px 20px 40px;">
+                            <h2 style="color: #333333; font-size: 24px; margin: 0 0 20px 0;">Hi {{firstName}},</h2>
+                            <p style="color: #666666; font-size: 16px; line-height: 24px; margin: 0 0 20px 0;">
+                                Thanks for signing up for ModMaster Pro! Please verify your email address to activate your account and start exploring all our features.
+                            </p>
+                            
+                            <!-- One-click verification button -->
+                            <table border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{verifyLink}}" target="_blank" style="display: inline-block; padding: 16px 48px; background-color: #10b981; color: #ffffff; text-decoration: none; font-size: 18px; font-weight: bold; border-radius: 8px;">Verify Email Address</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Manual verification code option -->
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 30px 0; text-align: center;">
+                                <p style="color: #666666; font-size: 14px; margin: 0 0 15px 0;">Or enter this verification code manually:</p>
+                                <div class="code-box" style="background-color: #ffffff; border: 2px dashed #10b981; border-radius: 8px; padding: 20px; margin: 0 auto; max-width: 300px;">
+                                    <span style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; color: #10b981; letter-spacing: 8px;">{{verifyCode}}</span>
+                                </div>
+                                <p style="color: #999999; font-size: 12px; margin: 15px 0 0 0;">Code expires in {{expirationTime}}</p>
+                            </div>
+                            
+                            <!-- Benefits of verification -->
+                            <div style="margin: 30px 0;">
+                                <h3 style="color: #333333; font-size: 18px; margin: 0 0 15px 0;">Why verify your email?</h3>
+                                <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                    <tr>
+                                        <td width="40" valign="top" style="padding: 5px 0;">
+                                            <img src="https://modmasterpro.com/icons/check-green.png" alt="✓" width="24" height="24">
+                                        </td>
+                                        <td style="padding: 5px 0 5px 10px;">
+                                            <p style="color: #666666; font-size: 15px; margin: 0;">Access all ModMaster Pro features</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width="40" valign="top" style="padding: 5px 0;">
+                                            <img src="https://modmasterpro.com/icons/check-green.png" alt="✓" width="24" height="24">
+                                        </td>
+                                        <td style="padding: 5px 0 5px 10px;">
+                                            <p style="color: #666666; font-size: 15px; margin: 0;">Receive important account notifications</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width="40" valign="top" style="padding: 5px 0;">
+                                            <img src="https://modmasterpro.com/icons/check-green.png" alt="✓" width="24" height="24">
+                                        </td>
+                                        <td style="padding: 5px 0 5px 10px;">
+                                            <p style="color: #666666; font-size: 15px; margin: 0;">Enhanced account security</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width="40" valign="top" style="padding: 5px 0;">
+                                            <img src="https://modmasterpro.com/icons/check-green.png" alt="✓" width="24" height="24">
+                                        </td>
+                                        <td style="padding: 5px 0 5px 10px;">
+                                            <p style="color: #666666; font-size: 15px; margin: 0;">Start buying and selling parts</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <p style="color: #666666; font-size: 14px; line-height: 20px; margin: 20px 0; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                                If the button above doesn't work, copy and paste this link into your browser:<br>
+                                <a href="{{verifyLink}}" style="color: #10b981; word-break: break-all; font-size: 12px;">{{verifyLink}}</a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Support Section -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 40px 40px;">
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; text-align: center;">
+                                <img src="https://modmasterpro.com/icons/support.png" alt="Support" width="48" height="48" style="margin-bottom: 10px;">
+                                <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0;">Need Help?</h3>
+                                <p style="color: #1e40af; font-size: 14px; margin: 0 0 15px 0;">
+                                    Our support team is here to help you get started.
+                                </p>
+                                <a href="mailto:support@modmasterpro.com" style="display: inline-block; padding: 10px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 6px;">Contact Support</a>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td align="center" style="padding-bottom: 20px;">
+                                        <a href="https://facebook.com/modmasterpro" style="display: inline-block; margin: 0 10px;">
+                                            <img src="https://modmasterpro.com/icons/facebook.png" alt="Facebook" width="32" height="32">
+                                        </a>
+                                        <a href="https://twitter.com/modmasterpro" style="display: inline-block; margin: 0 10px;">
+                                            <img src="https://modmasterpro.com/icons/twitter.png" alt="Twitter" width="32" height="32">
+                                        </a>
+                                        <a href="https://instagram.com/modmasterpro" style="display: inline-block; margin: 0 10px;">
+                                            <img src="https://modmasterpro.com/icons/instagram.png" alt="Instagram" width="32" height="32">
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center">
+                                        <p style="color: #999999; font-size: 12px; margin: 0;">
+                                            This email was sent to {{userEmail}}<br>
+                                            © 2024 ModMaster Pro. All rights reserved.<br>
+                                            123 Auto Way, Detroit, MI 48201
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    
+    <!-- Plain text version -->
+    <div style="display: none;">
+        Verify Your Email Address
+        
+        Hi {{firstName}},
+        
+        Thanks for signing up for ModMaster Pro! Please verify your email address to activate your account.
+        
+        Click here to verify: {{verifyLink}}
+        
+        Or enter this code manually: {{verifyCode}}
+        
+        This code expires in {{expirationTime}}.
+        
+        Why verify your email?
+        - Access all ModMaster Pro features
+        - Receive important notifications
+        - Enhanced account security
+        - Start buying and selling parts
+        
+        Need help? Contact support@modmasterpro.com
+        
+        © 2024 ModMaster Pro. All rights reserved.
+    </div>
+</body>
+</html>

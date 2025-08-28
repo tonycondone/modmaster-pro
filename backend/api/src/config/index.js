@@ -15,17 +15,20 @@ const config = {
 
   // Database
   database: {
+    client: 'postgresql',
     url: process.env.DATABASE_URL || (() => {
       throw new Error('DATABASE_URL environment variable is required');
     })(),
-    host: process.env.POSTGRES_HOST || 'localhost',
-    port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
-    name: process.env.POSTGRES_DB || 'modmaster_pro',
-    username: process.env.POSTGRES_USER || 'modmaster_user',
-    password: process.env.POSTGRES_PASSWORD || (() => {
-      throw new Error('POSTGRES_PASSWORD environment variable is required for security');
-    })(),
-    sslMode: process.env.POSTGRES_SSL_MODE || 'disable',
+    connection: {
+      host: process.env.POSTGRES_HOST || 'localhost',
+      port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
+      database: process.env.POSTGRES_DB || 'modmaster_pro',
+      user: process.env.POSTGRES_USER || 'modmaster_user',
+      password: process.env.POSTGRES_PASSWORD || (() => {
+        throw new Error('POSTGRES_PASSWORD environment variable is required for security');
+      })(),
+      ssl: process.env.POSTGRES_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
+    },
     pool: {
       min: parseInt(process.env.DB_POOL_MIN, 10) || 2,
       max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
