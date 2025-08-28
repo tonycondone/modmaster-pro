@@ -53,7 +53,9 @@ module.exports = {
 
   production: {
     client: 'postgresql',
-    connection: process.env.DATABASE_URL || 'postgresql://modmaster_user:1212@localhost:5432/modmaster_pro',
+    connection: process.env.DATABASE_URL || (() => {
+      throw new Error('DATABASE_URL environment variable is required for production');
+    })(),
     pool: {
       min: parseInt(process.env.DB_POOL_MIN, 10) || 2,
       max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
