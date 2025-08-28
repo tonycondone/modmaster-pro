@@ -95,6 +95,18 @@ const rateLimiters = {
     },
     standardHeaders: true,
     legacyHeaders: false
+  }),
+
+  // AI/ML rate limiter (very strict for expensive operations)
+  ai: rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20, // limit each IP to 20 AI requests per hour
+    message: {
+      error: 'Too many AI requests, please try again later.',
+      retryAfter: 60 * 60
+    },
+    standardHeaders: true,
+    legacyHeaders: false
   })
 };
 
