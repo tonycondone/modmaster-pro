@@ -160,12 +160,12 @@ const RegisterScreen: React.FC = () => {
               <View style={styles.formContainer}>
                 <View style={styles.nameContainer}>
                   <View style={styles.nameField}>
-                    <TextInput
-                      label="First Name"
+                <TextInput
+                  label="First Name"
                       value={values.firstName}
                       onChangeText={handleChange('firstName')}
                       onBlur={handleBlur('firstName')}
-                      mode="outlined"
+                  mode="outlined"
                       left={<TextInput.Icon icon="account" />}
                       error={touched.firstName && !!errors.firstName}
                     />
@@ -175,69 +175,69 @@ const RegisterScreen: React.FC = () => {
                   </View>
                   
                   <View style={styles.nameField}>
-                    <TextInput
-                      label="Last Name"
+                <TextInput
+                  label="Last Name"
                       value={values.lastName}
                       onChangeText={handleChange('lastName')}
                       onBlur={handleBlur('lastName')}
-                      mode="outlined"
+                  mode="outlined"
                       error={touched.lastName && !!errors.lastName}
                     />
                     <HelperText type="error" visible={touched.lastName && !!errors.lastName}>
-                      {errors.lastName}
-                    </HelperText>
+                {errors.lastName}
+              </HelperText>
                   </View>
                 </View>
 
-                <TextInput
-                  label="Email"
+              <TextInput
+                label="Email"
                   value={values.email}
                   onChangeText={handleChange('email')}
                   onBlur={handleBlur('email')}
-                  mode="outlined"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
+                mode="outlined"
+                keyboardType="email-address"
+                autoCapitalize="none"
                   autoComplete="email"
                   left={<TextInput.Icon icon="email" />}
                   error={touched.email && !!errors.email}
-                  style={styles.input}
-                />
+                style={styles.input}
+              />
                 <HelperText type="error" visible={touched.email && !!errors.email}>
-                  {errors.email}
-                </HelperText>
+                {errors.email}
+              </HelperText>
 
-                <TextInput
-                  label="Phone (Optional)"
+              <TextInput
+                label="Phone (Optional)"
                   value={values.phone}
                   onChangeText={handleChange('phone')}
                   onBlur={handleBlur('phone')}
-                  mode="outlined"
-                  keyboardType="phone-pad"
+                mode="outlined"
+                keyboardType="phone-pad"
                   left={<TextInput.Icon icon="phone" />}
                   error={touched.phone && !!errors.phone}
-                  style={styles.input}
-                />
+                style={styles.input}
+              />
                 <HelperText type="error" visible={touched.phone && !!errors.phone}>
-                  {errors.phone}
-                </HelperText>
+                {errors.phone}
+              </HelperText>
 
-                <TextInput
-                  label="Password"
+              <TextInput
+                label="Password"
                   value={values.password}
                   onChangeText={handleChange('password')}
                   onBlur={handleBlur('password')}
-                  mode="outlined"
-                  secureTextEntry={!showPassword}
+                mode="outlined"
+                secureTextEntry={!showPassword}
                   autoComplete="password-new"
                   left={<TextInput.Icon icon="lock" />}
-                  right={
-                    <TextInput.Icon
-                      icon={showPassword ? 'eye-off' : 'eye'}
-                      onPress={() => setShowPassword(!showPassword)}
-                    />
-                  }
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowPassword(!showPassword)}
+                  />
+                }
                   error={touched.password && !!errors.password}
-                  style={styles.input}
+                style={styles.input}
                 />
                 {values.password && (
                   <View style={styles.passwordStrength}>
@@ -252,30 +252,30 @@ const RegisterScreen: React.FC = () => {
                   </View>
                 )}
                 <HelperText type="error" visible={touched.password && !!errors.password}>
-                  {errors.password}
-                </HelperText>
+                {errors.password}
+              </HelperText>
 
-                <TextInput
-                  label="Confirm Password"
+              <TextInput
+                label="Confirm Password"
                   value={values.confirmPassword}
                   onChangeText={handleChange('confirmPassword')}
                   onBlur={handleBlur('confirmPassword')}
-                  mode="outlined"
-                  secureTextEntry={!showConfirmPassword}
+                mode="outlined"
+                secureTextEntry={!showConfirmPassword}
                   autoComplete="password-new"
                   left={<TextInput.Icon icon="lock-check" />}
-                  right={
-                    <TextInput.Icon
-                      icon={showConfirmPassword ? 'eye-off' : 'eye'}
-                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    />
-                  }
+                right={
+                  <TextInput.Icon
+                    icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  />
+                }
                   error={touched.confirmPassword && !!errors.confirmPassword}
-                  style={styles.input}
-                />
+                style={styles.input}
+              />
                 <HelperText type="error" visible={touched.confirmPassword && !!errors.confirmPassword}>
-                  {errors.confirmPassword}
-                </HelperText>
+                {errors.confirmPassword}
+              </HelperText>
 
                 <TouchableOpacity
                   style={styles.checkboxContainer}
@@ -309,16 +309,16 @@ const RegisterScreen: React.FC = () => {
                   </Text>
                 </TouchableOpacity>
 
-                <Button
-                  mode="contained"
+              <Button
+                mode="contained"
                   onPress={handleSubmit as any}
-                  loading={isLoading}
-                  disabled={isLoading}
-                  style={styles.registerButton}
-                  contentStyle={styles.registerButtonContent}
-                >
-                  Create Account
-                </Button>
+                loading={isLoading}
+                disabled={isLoading}
+                style={styles.registerButton}
+                contentStyle={styles.registerButtonContent}
+              >
+                Create Account
+              </Button>
               </View>
             </>
           )}
@@ -353,7 +353,7 @@ const RegisterScreen: React.FC = () => {
               Continue with Apple
             </Button>
           )}
-        </View>
+          </View>
 
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>Already have an account? </Text>

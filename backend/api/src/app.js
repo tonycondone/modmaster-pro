@@ -6,7 +6,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-const prometheusMiddleware = require('express-prometheus-middleware');
+// const prometheusMiddleware = require('express-prometheus-middleware');
 require('express-async-errors');
 
 // Import configuration
@@ -75,14 +75,14 @@ if (config.environment !== 'test') {
   app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 }
 
-// Prometheus metrics middleware
-app.use(prometheusMiddleware({
-  metricsPath: '/metrics',
-  collectDefaultMetrics: true,
-  requestDurationBuckets: [0.1, 0.5, 1, 2, 5],
-  requestLengthBuckets: [512, 1024, 5120, 10240, 51200],
-  responseLengthBuckets: [512, 1024, 5120, 10240, 51200],
-}));
+// Prometheus metrics middleware (temporarily disabled)
+// app.use(prometheusMiddleware({
+//   metricsPath: '/metrics',
+//   collectDefaultMetrics: true,
+//   requestDurationBuckets: [0.1, 0.5, 1, 2, 5],
+//   requestLengthBuckets: [512, 1024, 5120, 10240, 51200],
+//   responseLengthBuckets: [512, 1024, 5120, 10240, 51200],
+// }));
 
 // Rate limiting middleware
 const limiter = rateLimit({

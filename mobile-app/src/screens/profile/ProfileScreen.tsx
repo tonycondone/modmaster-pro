@@ -277,11 +277,11 @@ const ProfileScreen = () => {
                     />
                   </View>
                   <Text style={styles.badgeName}>{badge.name}</Text>
-                </View>
+          </View>
               ))}
             </ScrollView>
-          </Card.Content>
-        </Card>
+        </Card.Content>
+      </Card>
       )}
 
       {/* Menu Sections */}
@@ -350,7 +350,7 @@ const ProfileScreen = () => {
             { borderColor: getSubscriptionColor(user.subscription.plan) },
           ]}
         >
-          <Card.Content>
+        <Card.Content>
             <View style={styles.subscriptionHeader}>
               <MaterialCommunityIcons
                 name={getSubscriptionIcon(user.subscription.plan)}

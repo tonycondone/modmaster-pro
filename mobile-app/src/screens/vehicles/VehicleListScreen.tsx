@@ -198,10 +198,10 @@ const VehicleListScreen = () => {
                 </View>
               )}
             </View>
-            <View style={styles.vehicleInfo}>
-              <Text style={styles.vehicleName}>
-                {item.year} {item.make} {item.model}
-              </Text>
+        <View style={styles.vehicleInfo}>
+            <Text style={styles.vehicleName}>
+              {item.year} {item.make} {item.model}
+            </Text>
               {item.licensePlate && (
                 <Text style={styles.vehicleDetail}>
                   <MaterialCommunityIcons name="card-text" size={14} color="#666" />
@@ -289,10 +289,10 @@ const VehicleListScreen = () => {
             </TouchableOpacity>
           )}
         </View>
-        <Menu
+            <Menu
           visible={filterMenuVisible}
           onDismiss={() => setFilterMenuVisible(false)}
-          anchor={
+              anchor={
             <TouchableOpacity
               style={styles.filterButton}
               onPress={() => setFilterMenuVisible(true)}
@@ -304,27 +304,27 @@ const VehicleListScreen = () => {
                 </View>
               )}
             </TouchableOpacity>
-          }
-        >
-          <Menu.Item
+              }
+            >
+              <Menu.Item
             onPress={() => toggleFilter('maintenance_due')}
             title="Maintenance Due"
             leadingIcon={selectedFilters.includes('maintenance_due') ? 'check' : undefined}
-          />
-          <Menu.Item
+              />
+              <Menu.Item
             onPress={() => toggleFilter('active')}
             title="Active Only"
             leadingIcon={selectedFilters.includes('active') ? 'check' : undefined}
-          />
-          <Divider />
-          <Menu.Item
+              />
+              <Divider />
+              <Menu.Item
             onPress={() => setSelectedFilters([])}
             title="Clear Filters"
             leadingIcon="close"
-          />
-        </Menu>
-      </View>
-
+              />
+            </Menu>
+          </View>
+          
       {/* View Mode and Sort Controls */}
       <View style={styles.controls}>
         <SegmentedButtons
@@ -348,8 +348,8 @@ const VehicleListScreen = () => {
             ]}
             style={styles.sortButtons}
           />
-        </View>
-      </View>
+              </View>
+          </View>
 
       {/* Vehicle List */}
       {filteredAndSortedVehicles.length === 0 ? (
@@ -370,16 +370,16 @@ const VehicleListScreen = () => {
           )}
         </View>
       ) : (
-        <FlatList
+      <FlatList
           data={filteredAndSortedVehicles}
           renderItem={renderVehicleCard}
-          keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id}
           numColumns={viewMode === 'grid' ? 2 : 1}
           key={viewMode} // Force re-render when view mode changes
           contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
           onEndReached={loadMoreVehicles}
           onEndReachedThreshold={0.5}
           ListFooterComponent={

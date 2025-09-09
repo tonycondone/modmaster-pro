@@ -8,12 +8,12 @@ asyncpg==0.29.0
 redis==5.0.1
 
 # AI/ML libraries
-torch==2.1.0
-torchvision==0.16.0
-ultralytics==8.0.196
-opencv-python==4.8.1.78
-Pillow==10.1.0
-numpy==1.24.3
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
 
 # Image processing
 scikit-image==0.21.0

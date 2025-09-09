@@ -281,7 +281,7 @@ const BrowsePartsScreen = () => {
             </View>
           )}
         </View>
-        <Card.Content style={styles.partContent}>
+      <Card.Content style={styles.partContent}>
           <Text style={styles.partBrand}>{item.brand}</Text>
           <Text style={styles.partName} numberOfLines={2}>
             {item.name}
@@ -317,8 +317,8 @@ const BrowsePartsScreen = () => {
               {isInCart(item.id) ? 'In Cart' : 'Add to Cart'}
             </Text>
           </TouchableOpacity>
-        </Card.Content>
-      </Card>
+      </Card.Content>
+    </Card>
     </TouchableOpacity>
   );
 
@@ -341,8 +341,8 @@ const BrowsePartsScreen = () => {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0066CC" />
         <Text style={styles.loadingText}>Loading parts...</Text>
-      </View>
-    );
+    </View>
+  );
   }
 
   // 7. MAIN RENDER - MANDATORY
@@ -400,12 +400,12 @@ const BrowsePartsScreen = () => {
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
+        <FlatList
             data={featuredParts.slice(0, 5)}
             renderItem={renderFeaturedPart}
             keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
+          horizontal
+          showsHorizontalScrollIndicator={false}
           />
         </View>
       )}
