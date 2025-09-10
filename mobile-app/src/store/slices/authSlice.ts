@@ -109,6 +109,33 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
+<<<<<<< HEAD
+=======
+export const verifyEmail = createAsyncThunk(
+  'auth/verifyEmail',
+  async (data: { email: string; code: string }, { rejectWithValue }) => {
+    try {
+      const response = await apiService.post('/auth/verify-email', data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(apiService.handleError(error));
+    }
+  }
+);
+
+export const resendVerificationEmail = createAsyncThunk(
+  'auth/resendVerificationEmail',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const response = await apiService.post('/auth/resend-verification', { email });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(apiService.handleError(error));
+    }
+  }
+);
+
+>>>>>>> v.3.0
 const authSlice = createSlice({
   name: 'auth',
   initialState,

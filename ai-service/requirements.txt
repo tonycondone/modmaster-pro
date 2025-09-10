@@ -6,17 +6,11 @@ python-multipart==0.0.6
 # Database
 asyncpg==0.29.0
 redis==5.0.1
+motor==3.3.2  # MongoDB async driver
 
-# AI/ML libraries
-torch==2.1.0
-torchvision==0.16.0
-ultralytics==8.0.196
-opencv-python==4.8.1.78
-Pillow==10.1.0
-numpy==1.24.3
-
-# Image processing
-scikit-image==0.21.0
+# HTTP clients
+httpx==0.25.2
+aiohttp==3.9.1
 
 # Utilities
 pydantic==2.5.0

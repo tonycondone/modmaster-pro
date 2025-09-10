@@ -1,0 +1,1068 @@
+openapi: 3.0.0
+info:
+  title: ModMaster Pro API
+  description: |
+    ModMaster Pro is a comprehensive vehicle parts identification and marketplace platform 
+    that uses AI-powered image recognition to identify automotive parts from photos.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Rate Limiting
+    API endpoints are rate limited based on your subscription tier:
+    - Free: 100 requests/minute
+    - Basic: 200 requests/minute
+    - Pro: 500 requests/minute
+    - Enterprise: 1000 requests/minute
+    
+    ## Error Handling
+    All errors follow a consistent format:
+    ```json
+    {
+      "success": false,
+      "message": "Error description",
+      "errors": [...]
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: ModMaster Pro Support
+    email: support@modmasterpro.com
+    url: https://modmasterpro.com/support
+  license:
+    name: Proprietary
+    url: https://modmasterpro.com/license
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.modmasterpro.com
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation failed"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [user, seller, admin]
+        emailVerified:
+          type: boolean
+        twoFactorEnabled:
+          type: boolean
+        subscription:
+          type: object
+          properties:
+            tier:
+              type: string
+              enum: [free, basic, pro, enterprise]
+            status:
+              type: string
+              enum: [active, cancelled, expired]
+            expiresAt:
+              type: string
+              format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        vin:
+          type: string
+        licensePlate:
+          type: string
+        color:
+          type: string
+        mileage:
+          type: integer
+        transmission:
+          type: string
+          enum: [manual, automatic, cvt, dual-clutch, other]
+        fuelType:
+          type: string
+          enum: [gasoline, diesel, electric, hybrid, plugin-hybrid, hydrogen, other]
+        engine:
+          type: object
+          properties:
+            size:
+              type: string
+            cylinders:
+              type: integer
+            horsepower:
+              type: integer
+            torque:
+              type: integer
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Part:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        manufacturer:
+          type: object
+          properties:
+            name:
+              type: string
+            partNumber:
+              type: string
+            oem:
+              type: boolean
+        price:
+          type: number
+          format: float
+        compareAtPrice:
+          type: number
+          format: float
+        condition:
+          type: string
+          enum: [new, oem, aftermarket, refurbished, used]
+        stock:
+          type: object
+          properties:
+            quantity:
+              type: integer
+            lowStockThreshold:
+              type: integer
+            trackInventory:
+              type: boolean
+            allowBackorder:
+              type: boolean
+        compatibility:
+          type: array
+          items:
+            type: object
+            properties:
+              make:
+                type: string
+              model:
+                type: string
+              yearStart:
+                type: integer
+              yearEnd:
+                type: integer
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+        reviewCount:
+          type: integer
+        active:
+          type: boolean
+        featured:
+          type: boolean
+
+    Scan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        results:
+          type: object
+          properties:
+            identifiedParts:
+              type: array
+              items:
+                type: object
+                properties:
+                  partId:
+                    type: string
+                  name:
+                    type: string
+                  confidence:
+                    type: number
+                    format: float
+                    minimum: 0
+                    maximum: 1
+                  boundingBox:
+                    type: object
+                    properties:
+                      x:
+                        type: number
+                      y:
+                        type: number
+                      width:
+                        type: number
+                      height:
+                        type: number
+            processingTime:
+              type: number
+              format: float
+        createdAt:
+          type: string
+          format: date-time
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled, refunded]
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              partId:
+                type: string
+              name:
+                type: string
+              quantity:
+                type: integer
+              price:
+                type: number
+                format: float
+        subtotal:
+          type: number
+          format: float
+        tax:
+          type: number
+          format: float
+        shipping:
+          type: number
+          format: float
+        total:
+          type: number
+          format: float
+        shippingAddress:
+          type: object
+          properties:
+            name:
+              type: string
+            line1:
+              type: string
+            line2:
+              type: string
+            city:
+              type: string
+            state:
+              type: string
+            postalCode:
+              type: string
+            country:
+              type: string
+        tracking:
+          type: object
+          properties:
+            carrier:
+              type: string
+            trackingNumber:
+              type: string
+            trackingUrl:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User profile management
+  - name: Vehicles
+    description: Vehicle management
+  - name: Parts
+    description: Parts marketplace
+  - name: Scans
+    description: AI-powered part scanning
+  - name: Cart
+    description: Shopping cart operations
+  - name: Orders
+    description: Order management
+  - name: Payments
+    description: Payment processing
+  - name: Admin
+    description: Admin operations
+
+paths:
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - confirmPassword
+                - firstName
+                - lastName
+                - acceptTerms
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                confirmPassword:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+                acceptTerms:
+                  type: boolean
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                rememberMe:
+                  type: boolean
+                  default: false
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                      refreshToken:
+                        type: string
+        401:
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+        401:
+          description: Unauthorized
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        200:
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      refreshToken:
+                        type: string
+
+  # Vehicle Endpoints
+  /vehicles:
+    get:
+      tags:
+        - Vehicles
+      summary: Get user vehicles
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - in: query
+          name: active
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: List of vehicles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      vehicles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Vehicle'
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          total:
+                            type: integer
+                          pages:
+                            type: integer
+
+    post:
+      tags:
+        - Vehicles
+      summary: Add a new vehicle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - make
+                - model
+                - year
+                - mileage
+              properties:
+                make:
+                  type: string
+                model:
+                  type: string
+                year:
+                  type: integer
+                vin:
+                  type: string
+                  pattern: '^[A-HJ-NPR-Z0-9]{17}$'
+                licensePlate:
+                  type: string
+                color:
+                  type: string
+                mileage:
+                  type: integer
+                  minimum: 0
+                transmission:
+                  type: string
+                  enum: [manual, automatic, cvt, dual-clutch, other]
+                fuelType:
+                  type: string
+                  enum: [gasoline, diesel, electric, hybrid, plugin-hybrid, hydrogen, other]
+      responses:
+        201:
+          description: Vehicle created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Vehicle'
+
+  /vehicles/{id}:
+    get:
+      tags:
+        - Vehicles
+      summary: Get vehicle details
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Vehicle details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Vehicle'
+        404:
+          description: Vehicle not found
+
+    put:
+      tags:
+        - Vehicles
+      summary: Update vehicle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                make:
+                  type: string
+                model:
+                  type: string
+                year:
+                  type: integer
+                mileage:
+                  type: integer
+      responses:
+        200:
+          description: Vehicle updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Vehicle'
+
+    delete:
+      tags:
+        - Vehicles
+      summary: Delete vehicle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Vehicle deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  # Parts Endpoints
+  /parts:
+    get:
+      tags:
+        - Parts
+      summary: Browse parts marketplace
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+          description: Search query
+        - in: query
+          name: category
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - in: query
+          name: priceMin
+          schema:
+            type: number
+        - in: query
+          name: priceMax
+          schema:
+            type: number
+        - in: query
+          name: condition
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [new, oem, aftermarket, refurbished, used]
+        - in: query
+          name: vehicle.make
+          schema:
+            type: string
+        - in: query
+          name: vehicle.model
+          schema:
+            type: string
+        - in: query
+          name: vehicle.year
+          schema:
+            type: integer
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [price, name, rating, popularity, newest]
+            default: popularity
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        200:
+          description: List of parts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      parts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Part'
+                      facets:
+                        type: object
+                        properties:
+                          categories:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                count:
+                                  type: integer
+                          priceRange:
+                            type: object
+                            properties:
+                              min:
+                                type: number
+                              max:
+                                type: number
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          total:
+                            type: integer
+                          pages:
+                            type: integer
+
+  /parts/{id}:
+    get:
+      tags:
+        - Parts
+      summary: Get part details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Part details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Part'
+        404:
+          description: Part not found
+
+  # Scan Endpoints
+  /scans/process:
+    post:
+      tags:
+        - Scans
+      summary: Process part scan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  description: Base64 encoded image
+                imageFormat:
+                  type: string
+                  enum: [jpeg, jpg, png, webp]
+                  default: jpeg
+                vehicleId:
+                  type: string
+                  format: uuid
+                metadata:
+                  type: object
+                options:
+                  type: object
+                  properties:
+                    priority:
+                      type: string
+                      enum: [low, normal, high]
+                      default: normal
+                    enhanceImage:
+                      type: boolean
+                      default: true
+                    minConfidence:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+                      default: 0.5
+      responses:
+        202:
+          description: Scan processing initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      scanId:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum: [pending, processing]
+                      estimatedTime:
+                        type: integer
+                        description: Estimated processing time in seconds
+
+  /scans:
+    get:
+      tags:
+        - Scans
+      summary: Get scan history
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: vehicleId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        200:
+          description: Scan history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      scans:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Scan'
+                      pagination:
+                        type: object
+
+  /scans/{id}:
+    get:
+      tags:
+        - Scans
+      summary: Get scan results
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Scan results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Scan'
+
+  # WebSocket Events Documentation
+  /ws:
+    get:
+      tags:
+        - WebSocket
+      summary: WebSocket connection for real-time updates
+      description: |
+        Connect to receive real-time updates. Events include:
+        - `scan:update` - Scan processing updates
+        - `order:update` - Order status updates
+        - `notification` - General notifications
+        
+        Authentication required via query parameter: `?token=<jwt-token>`
+      responses:
+        101:
+          description: Switching Protocols

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - ModMaster Pro</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Remove default styling */
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        /* Mobile styles */
+        @media screen and (max-width: 600px) {
+            .mobile-hide { display: none !important; }
+            .mobile-center { text-align: center !important; }
+            .mobile-padding { padding: 20px !important; }
+            table.responsive-table { width: 100% !important; }
+            td.responsive-td { display: block !important; width: 100% !important; }
+            .order-summary td { display: block !important; width: 100% !important; text-align: left !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table class="responsive-table" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 20px; background-color: #10b981; border-radius: 8px 8px 0 0;">
+                            <img src="https://modmasterpro.com/logo-white.png" alt="ModMaster Pro" width="200" style="display: block; max-width: 100%; height: auto;">
+                            <h1 style="color: #ffffff; font-size: 28px; margin: 20px 0 0 0; font-weight: bold;">Order Confirmed!</h1>
+                            <p style="color: #ffffff; font-size: 18px; margin: 10px 0 0 0;">Thank you for your purchase</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Order Summary Header -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 40px 40px 20px 40px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <h2 style="color: #333333; font-size: 24px; margin: 0 0 5px 0;">Hi {{orderDetails.customerName}},</h2>
+                                        <p style="color: #666666; font-size: 16px; margin: 0;">Your order has been confirmed and will be shipped soon!</p>
+                                    </td>
+                                    <td align="right" class="mobile-center" style="padding-top: 10px;">
+                                        <span style="color: #999999; font-size: 14px;">Order #{{orderDetails.orderNumber}}</span><br>
+                                        <span style="color: #999999; font-size: 14px;">{{orderDetails.orderDate}}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Order Items -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 20px 40px;">
+                            <h3 style="color: #333333; font-size: 18px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e5e7eb;">Order Details</h3>
+                            
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                {{#each itemizedList}}
+                                <tr>
+                                    <td style="padding: 15px 0; border-bottom: 1px solid #f3f4f6;">
+                                        <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                            <tr>
+                                                <td width="80" valign="top">
+                                                    <img src="{{this.image}}" alt="{{this.name}}" width="70" height="70" style="border-radius: 4px;">
+                                                </td>
+                                                <td style="padding-left: 15px;" valign="top">
+                                                    <h4 style="color: #333333; font-size: 16px; margin: 0 0 5px 0;">{{this.name}}</h4>
+                                                    <p style="color: #666666; font-size: 14px; margin: 0;">
+                                                        Part #: {{this.partNumber}}<br>
+                                                        Quantity: {{this.quantity}}<br>
+                                                        {{#if this.vehicleCompatibility}}
+                                                        <span style="color: #10b981; font-size: 12px;">✓ Compatible with {{this.vehicleCompatibility}}</span>
+                                                        {{/if}}
+                                                    </p>
+                                                </td>
+                                                <td align="right" valign="top" width="100">
+                                                    <p style="color: #333333; font-size: 16px; margin: 0; font-weight: bold;">${{this.totalPrice}}</p>
+                                                    {{#if this.originalPrice}}
+                                                    <p style="color: #999999; font-size: 14px; margin: 5px 0 0 0; text-decoration: line-through;">${{this.originalPrice}}</p>
+                                                    {{/if}}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Order Summary -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 20px 40px;">
+                            <table class="order-summary" border="0" cellspacing="0" cellpadding="0" width="100%" style="background-color: #f8f9fa; border-radius: 8px; padding: 20px;">
+                                <tr>
+                                    <td style="padding: 5px 0;">
+                                        <span style="color: #666666; font-size: 14px;">Subtotal</span>
+                                    </td>
+                                    <td align="right" style="padding: 5px 0;">
+                                        <span style="color: #666666; font-size: 14px;">${{orderDetails.subtotal}}</span>
+                                    </td>
+                                </tr>
+                                {{#if orderDetails.discount}}
+                                <tr>
+                                    <td style="padding: 5px 0;">
+                                        <span style="color: #10b981; font-size: 14px;">Discount ({{orderDetails.discountCode}})</span>
+                                    </td>
+                                    <td align="right" style="padding: 5px 0;">
+                                        <span style="color: #10b981; font-size: 14px;">-${{orderDetails.discount}}</span>
+                                    </td>
+                                </tr>
+                                {{/if}}
+                                <tr>
+                                    <td style="padding: 5px 0;">
+                                        <span style="color: #666666; font-size: 14px;">Shipping</span>
+                                    </td>
+                                    <td align="right" style="padding: 5px 0;">
+                                        <span style="color: #666666; font-size: 14px;">{{#if orderDetails.freeShipping}}FREE{{else}}${{orderDetails.shipping}}{{/if}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px 0;">
+                                        <span style="color: #666666; font-size: 14px;">Tax</span>
+                                    </td>
+                                    <td align="right" style="padding: 5px 0;">
+                                        <span style="color: #666666; font-size: 14px;">${{orderDetails.tax}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0 5px 0; border-top: 2px solid #e5e7eb;">
+                                        <span style="color: #333333; font-size: 18px; font-weight: bold;">Total</span>
+                                    </td>
+                                    <td align="right" style="padding: 10px 0 5px 0; border-top: 2px solid #e5e7eb;">
+                                        <span style="color: #333333; font-size: 18px; font-weight: bold;">${{orderDetails.total}}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Shipping Information -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 20px 40px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td width="48%" valign="top">
+                                        <h3 style="color: #333333; font-size: 16px; margin: 0 0 10px 0;">Shipping Address</h3>
+                                        <p style="color: #666666; font-size: 14px; line-height: 20px; margin: 0;">
+                                            {{shippingInfo.name}}<br>
+                                            {{shippingInfo.address1}}<br>
+                                            {{#if shippingInfo.address2}}{{shippingInfo.address2}}<br>{{/if}}
+                                            {{shippingInfo.city}}, {{shippingInfo.state}} {{shippingInfo.zip}}<br>
+                                            {{shippingInfo.country}}
+                                        </p>
+                                    </td>
+                                    <td width="4%">&nbsp;</td>
+                                    <td width="48%" valign="top">
+                                        <h3 style="color: #333333; font-size: 16px; margin: 0 0 10px 0;">Shipping Method</h3>
+                                        <p style="color: #666666; font-size: 14px; line-height: 20px; margin: 0;">
+                                            {{shippingInfo.method}}<br>
+                                            Estimated Delivery:<br>
+                                            <strong>{{shippingInfo.estimatedDelivery}}</strong>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Tracking Information -->
+                    {{#if trackingNumber}}
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 30px 40px;">
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; text-align: center;">
+                                <img src="https://modmasterpro.com/icons/truck.png" alt="Shipping" width="48" height="48" style="margin-bottom: 10px;">
+                                <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0;">Track Your Order</h3>
+                                <p style="color: #1e40af; font-size: 14px; margin: 0 0 15px 0;">
+                                    Tracking Number: <strong>{{trackingNumber}}</strong>
+                                </p>
+                                <a href="{{trackingLink}}" target="_blank" style="display: inline-block; padding: 10px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 6px;">Track Package</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/if}}
+                    
+                    <!-- Return Policy -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 40px 40px;">
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px;">
+                                <h3 style="color: #333333; font-size: 16px; margin: 0 0 10px 0;">Return Policy</h3>
+                                <p style="color: #666666; font-size: 14px; line-height: 20px; margin: 0;">
+                                    Not satisfied with your purchase? You have 30 days from delivery to return most items for a full refund. Some restrictions apply for electronic parts and custom orders.
+                                </p>
+                                <p style="margin: 15px 0 0 0;">
+                                    <a href="{{returnPolicyLink}}" style="color: #2563eb; font-size: 14px;">View Full Return Policy →</a>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Action Buttons -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 40px 40px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{orderStatusLink}}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; margin: 0 10px 10px 0;">View Order Status</a>
+                                        <a href="{{shopMoreLink}}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: #ffffff; color: #2563eb; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; border: 2px solid #2563eb;">Continue Shopping</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <p style="color: #999999; font-size: 14px; margin: 0 0 10px 0;">
+                                            Questions about your order?<br>
+                                            Contact us at <a href="mailto:orders@modmasterpro.com" style="color: #2563eb;">orders@modmasterpro.com</a> or call 1-800-MODMASTER
+                                        </p>
+                                        <p style="color: #999999; font-size: 12px; margin: 0;">
+                                            © 2024 ModMaster Pro. All rights reserved.<br>
+                                            123 Auto Way, Detroit, MI 48201
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

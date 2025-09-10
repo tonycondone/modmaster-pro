@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Reminder - ModMaster Pro</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Remove default styling */
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        /* Mobile styles */
+        @media screen and (max-width: 600px) {
+            .mobile-hide { display: none !important; }
+            .mobile-center { text-align: center !important; }
+            .mobile-padding { padding: 20px !important; }
+            table.responsive-table { width: 100% !important; }
+            td.responsive-td { display: block !important; width: 100% !important; text-align: center !important; padding: 10px 0 !important; }
+            .mobile-button { width: 100% !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table class="responsive-table" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 20px; background-color: #f59e0b; border-radius: 8px 8px 0 0;">
+                            <img src="https://modmasterpro.com/logo-white.png" alt="ModMaster Pro" width="200" style="display: block; max-width: 100%; height: auto;">
+                            <h1 style="color: #ffffff; font-size: 28px; margin: 20px 0 0 0; font-weight: bold;">Maintenance Reminder</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Urgency Alert -->
+                    {{#if urgency}}
+                    <tr>
+                        <td style="padding: 0;">
+                            <div style="background-color: {{#if (eq urgency 'overdue')}}#fef2f2{{else if (eq urgency 'due')}}#fef3c7{{else}}#f0fdf4{{/if}}; border-bottom: 2px solid {{#if (eq urgency 'overdue')}}#dc2626{{else if (eq urgency 'due')}}#f59e0b{{else}}#10b981{{/if}}; padding: 15px 40px;">
+                                <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                    <tr>
+                                        <td width="40" valign="top">
+                                            <img src="https://modmasterpro.com/icons/{{#if (eq urgency 'overdue')}}alert-red{{else if (eq urgency 'due')}}alert-yellow{{else}}alert-green{{/if}}.png" alt="Alert" width="32" height="32" style="display: block;">
+                                        </td>
+                                        <td style="padding-left: 15px;">
+                                            <p style="color: {{#if (eq urgency 'overdue')}}#991b1b{{else if (eq urgency 'due')}}#92400e{{else}}#14532d{{/if}}; font-size: 14px; margin: 0; font-weight: bold;">
+                                                {{#if (eq urgency 'overdue')}}Overdue Maintenance{{else if (eq urgency 'due')}}Maintenance Due Soon{{else}}Upcoming Maintenance{{/if}}
+                                            </p>
+                                            <p style="color: {{#if (eq urgency 'overdue')}}#991b1b{{else if (eq urgency 'due')}}#92400e{{else}}#14532d{{/if}}; font-size: 14px; margin: 5px 0 0 0;">
+                                                {{#if (eq urgency 'overdue')}}This maintenance is overdue. Schedule service immediately.{{else if (eq urgency 'due')}}Your vehicle needs service within the next week.{{else}}Plan ahead for this upcoming maintenance.{{/if}}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/if}}
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 40px 40px 20px 40px;">
+                            <h2 style="color: #333333; font-size: 24px; margin: 0 0 20px 0;">Hi {{firstName}},</h2>
+                            <p style="color: #666666; font-size: 16px; line-height: 24px; margin: 0 0 20px 0;">
+                                It's time to service your {{vehicleInfo.year}} {{vehicleInfo.make}} {{vehicleInfo.model}}. Regular maintenance keeps your vehicle running smoothly and helps prevent costly repairs.
+                            </p>
+                            
+                            <!-- Vehicle Details -->
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                    <tr>
+                                        <td width="60" valign="top">
+                                            <img src="https://modmasterpro.com/icons/car.png" alt="Vehicle" width="48" height="48">
+                                        </td>
+                                        <td style="padding-left: 15px;">
+                                            <h3 style="color: #333333; font-size: 18px; margin: 0 0 5px 0;">{{vehicleInfo.year}} {{vehicleInfo.make}} {{vehicleInfo.model}}</h3>
+                                            <p style="color: #666666; font-size: 14px; margin: 0;">
+                                                VIN: {{vehicleInfo.vin}}<br>
+                                                Current Mileage: {{vehicleInfo.mileage}} miles<br>
+                                                License Plate: {{vehicleInfo.licensePlate}}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Maintenance Type -->
+                            <div style="border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                                <img src="https://modmasterpro.com/icons/{{maintenanceType.icon}}.png" alt="{{maintenanceType.name}}" width="64" height="64" style="margin-bottom: 10px;">
+                                <h3 style="color: #333333; font-size: 20px; margin: 0 0 10px 0;">{{maintenanceType.name}}</h3>
+                                <p style="color: #666666; font-size: 16px; margin: 0 0 15px 0;">{{maintenanceType.description}}</p>
+                                <table border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                                    <tr>
+                                        <td>
+                                            <a href="{{scheduleLink}}" target="_blank" style="display: inline-block; padding: 12px 32px; background-color: #f59e0b; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">Schedule Service</a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Recommended Parts -->
+                            {{#if recommendedParts}}
+                            <div style="margin: 30px 0;">
+                                <h3 style="color: #333333; font-size: 18px; margin: 0 0 15px 0;">Recommended Parts for This Service</h3>
+                                <table border="0" cellspacing="0" cellpadding="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                                    {{#each recommendedParts}}
+                                    <tr>
+                                        <td style="padding: 15px; border-bottom: 1px solid #e5e7eb;">
+                                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                                <tr>
+                                                    <td width="80">
+                                                        <img src="{{this.image}}" alt="{{this.name}}" width="70" height="70" style="border-radius: 4px;">
+                                                    </td>
+                                                    <td style="padding: 0 15px;">
+                                                        <h4 style="color: #333333; font-size: 16px; margin: 0 0 5px 0;">{{this.name}}</h4>
+                                                        <p style="color: #666666; font-size: 14px; margin: 0;">
+                                                            {{this.description}}<br>
+                                                            <span style="color: #f59e0b; font-weight: bold;">${{this.price}}</span>
+                                                        </p>
+                                                    </td>
+                                                    <td width="100" class="responsive-td">
+                                                        <a href="{{this.link}}" style="display: inline-block; padding: 8px 16px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 14px; border-radius: 6px; white-space: nowrap;">View Part</a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    {{/each}}
+                                </table>
+                                <p style="text-align: center; margin: 15px 0 0 0;">
+                                    <a href="{{allPartsLink}}" style="color: #2563eb; font-size: 14px;">Browse All Parts for Your Vehicle →</a>
+                                </p>
+                            </div>
+                            {{/if}}
+                            
+                            <!-- Maintenance History -->
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                <h4 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0;">Recent Maintenance History</h4>
+                                {{#if maintenanceHistory}}
+                                <ul style="color: #1e40af; font-size: 14px; line-height: 22px; margin: 0; padding-left: 20px;">
+                                    {{#each maintenanceHistory}}
+                                    <li>{{this.date}} - {{this.service}} ({{this.mileage}} miles)</li>
+                                    {{/each}}
+                                </ul>
+                                {{else}}
+                                <p style="color: #1e40af; font-size: 14px; margin: 0;">No recent maintenance records found.</p>
+                                {{/if}}
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Action Buttons -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 40px 40px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td width="48%" class="mobile-button">
+                                        <a href="{{scheduleLink}}" target="_blank" style="display: block; padding: 14px 24px; background-color: #f59e0b; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; text-align: center;">Schedule Service</a>
+                                    </td>
+                                    <td width="4%" class="mobile-hide">&nbsp;</td>
+                                    <td width="48%" class="mobile-button" style="padding-top: 10px;">
+                                        <a href="{{viewMaintenanceLink}}" target="_blank" style="display: block; padding: 14px 24px; background-color: #ffffff; color: #f59e0b; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; text-align: center; border: 2px solid #f59e0b;">View Full History</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <p style="color: #999999; font-size: 14px; margin: 0 0 10px 0;">
+                                            Need help finding a service center?<br>
+                                            Contact us at <a href="mailto:support@modmasterpro.com" style="color: #2563eb;">support@modmasterpro.com</a>
+                                        </p>
+                                        <p style="color: #999999; font-size: 12px; margin: 0;">
+                                            © 2024 ModMaster Pro. All rights reserved.<br>
+                                            123 Auto Way, Detroit, MI 48201<br>
+                                            <a href="{{notificationSettingsLink}}" style="color: #999999;">Manage Notification Preferences</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

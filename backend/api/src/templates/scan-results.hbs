@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Scan Results - ModMaster Pro</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Remove default styling */
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        /* Mobile styles */
+        @media screen and (max-width: 600px) {
+            .mobile-hide { display: none !important; }
+            .mobile-center { text-align: center !important; }
+            .mobile-padding { padding: 20px !important; }
+            table.responsive-table { width: 100% !important; }
+            td.responsive-td { display: block !important; width: 100% !important; }
+            .confidence-bar { width: 100% !important; }
+        }
+
+        /* Confidence score styles */
+        .confidence-bar {
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .confidence-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .confidence-high { background-color: #10b981; }
+        .confidence-medium { background-color: #f59e0b; }
+        .confidence-low { background-color: #ef4444; }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table class="responsive-table" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 20px; background-color: #7c3aed; border-radius: 8px 8px 0 0;">
+                            <img src="https://modmasterpro.com/logo-white.png" alt="ModMaster Pro" width="200" style="display: block; max-width: 100%; height: auto;">
+                            <h1 style="color: #ffffff; font-size: 28px; margin: 20px 0 0 0; font-weight: bold;">AI Scan Complete!</h1>
+                            <p style="color: #ffffff; font-size: 18px; margin: 10px 0 0 0;">We've identified your parts</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 40px 40px 20px 40px;">
+                            <h2 style="color: #333333; font-size: 24px; margin: 0 0 20px 0;">Hi {{firstName}},</h2>
+                            <p style="color: #666666; font-size: 16px; line-height: 24px; margin: 0 0 20px 0;">
+                                Our AI has analyzed your image and identified the following automotive parts. Click on any part to view details and purchase options.
+                            </p>
+                            
+                            <!-- Scanned Image -->
+                            <div style="text-align: center; margin: 20px 0;">
+                                <img src="{{scanImage}}" alt="Scanned Image" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <p style="color: #999999; font-size: 12px; margin: 10px 0 0 0;">Scan Date: {{scanDate}}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Identified Parts -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 20px 40px;">
+                            <h3 style="color: #333333; font-size: 20px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e5e7eb;">Identified Parts</h3>
+                            
+                            {{#each identifiedParts}}
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+                                <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                    <tr>
+                                        <td width="100" valign="top">
+                                            <img src="{{this.image}}" alt="{{this.name}}" width="90" height="90" style="border-radius: 4px;">
+                                        </td>
+                                        <td style="padding-left: 15px;" valign="top">
+                                            <h4 style="color: #333333; font-size: 18px; margin: 0 0 5px 0;">{{this.name}}</h4>
+                                            <p style="color: #666666; font-size: 14px; margin: 0 0 10px 0;">
+                                                Part #: {{this.partNumber}}<br>
+                                                Category: {{this.category}}
+                                            </p>
+                                            
+                                            <!-- Confidence Score -->
+                                            <div style="margin: 10px 0;">
+                                                <span style="color: #666666; font-size: 12px;">Confidence: {{this.confidence}}%</span>
+                                                <div class="confidence-bar" style="width: 200px; margin-top: 5px;">
+                                                    <div class="confidence-fill {{#if (gte this.confidence 80)}}confidence-high{{else if (gte this.confidence 60)}}confidence-medium{{else}}confidence-low{{/if}}" style="width: {{this.confidence}}%;"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <table border="0" cellspacing="0" cellpadding="0" style="margin-top: 10px;">
+                                                <tr>
+                                                    <td>
+                                                        <a href="{{this.link}}" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #7c3aed; color: #ffffff; text-decoration: none; font-size: 14px; border-radius: 6px;">View Part</a>
+                                                    </td>
+                                                    <td style="padding-left: 10px;">
+                                                        <span style="color: #10b981; font-size: 16px; font-weight: bold;">From ${{this.priceRange}}</span>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            {{/each}}
+                        </td>
+                    </tr>
+                    
+                    <!-- Recommendations -->
+                    {{#if recommendations}}
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 20px 40px;">
+                            <div style="background-color: #fef3c7; border-radius: 8px; padding: 20px;">
+                                <h3 style="color: #92400e; font-size: 16px; margin: 0 0 10px 0;">
+                                    <img src="https://modmasterpro.com/icons/lightbulb.png" alt="Tips" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                                    Recommendations
+                                </h3>
+                                <ul style="color: #92400e; font-size: 14px; line-height: 22px; margin: 0; padding-left: 20px;">
+                                    {{#each recommendations}}
+                                    <li>{{this}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/if}}
+                    
+                    <!-- Compatible Vehicles -->
+                    {{#if compatibleVehicles}}
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 20px 40px;">
+                            <h3 style="color: #333333; font-size: 18px; margin: 0 0 15px 0;">Compatible with Your Vehicles</h3>
+                            <div style="background-color: #f0fdf4; border-radius: 8px; padding: 15px;">
+                                {{#each compatibleVehicles}}
+                                <p style="color: #14532d; font-size: 14px; margin: 0 0 5px 0;">
+                                    <img src="https://modmasterpro.com/icons/check-green.png" alt="✓" width="16" height="16" style="vertical-align: middle; margin-right: 5px;">
+                                    {{this.year}} {{this.make}} {{this.model}}
+                                </p>
+                                {{/each}}
+                            </div>
+                        </td>
+                    </tr>
+                    {{/if}}
+                    
+                    <!-- Action Buttons -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 40px 40px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{viewAllPartsLink}}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: #7c3aed; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; margin: 0 10px 10px 0;">Browse All Parts</a>
+                                        <a href="{{scanAgainLink}}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: #ffffff; color: #7c3aed; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; border: 2px solid #7c3aed;">Scan Another Part</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- AI Accuracy Feedback -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 0 40px 40px 40px;">
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; text-align: center;">
+                                <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0;">How accurate was our AI?</h3>
+                                <p style="color: #1e40af; font-size: 14px; margin: 0 0 15px 0;">
+                                    Your feedback helps us improve our part recognition
+                                </p>
+                                <table border="0" cellspacing="0" cellpadding="0" align="center">
+                                    <tr>
+                                        <td style="padding: 0 5px;">
+                                            <a href="{{feedbackLink}}?rating=great" style="display: inline-block; padding: 8px 16px; background-color: #10b981; color: #ffffff; text-decoration: none; font-size: 14px; border-radius: 6px;">😊 Great</a>
+                                        </td>
+                                        <td style="padding: 0 5px;">
+                                            <a href="{{feedbackLink}}?rating=good" style="display: inline-block; padding: 8px 16px; background-color: #f59e0b; color: #ffffff; text-decoration: none; font-size: 14px; border-radius: 6px;">😐 Good</a>
+                                        </td>
+                                        <td style="padding: 0 5px;">
+                                            <a href="{{feedbackLink}}?rating=poor" style="display: inline-block; padding: 8px 16px; background-color: #ef4444; color: #ffffff; text-decoration: none; font-size: 14px; border-radius: 6px;">😟 Poor</a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px;">
+                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <p style="color: #999999; font-size: 14px; margin: 0 0 10px 0;">
+                                            Need help with your scan results?<br>
+                                            Contact us at <a href="mailto:support@modmasterpro.com" style="color: #7c3aed;">support@modmasterpro.com</a>
+                                        </p>
+                                        <p style="color: #999999; font-size: 12px; margin: 0;">
+                                            © 2024 ModMaster Pro. All rights reserved.<br>
+                                            123 Auto Way, Detroit, MI 48201<br>
+                                            <a href="{{scanHistoryLink}}" style="color: #999999;">View Scan History</a> | 
+                                            <a href="{{privacyLink}}" style="color: #999999;">Privacy Policy</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
