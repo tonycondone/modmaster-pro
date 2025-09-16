@@ -18,10 +18,15 @@ const User = require('./User')(sequelize);
 const Vehicle = require('./Vehicle')(sequelize);
 const Part = require('./Part')(sequelize);
 const Scan = require('./Scan')(sequelize);
+const VehicleScan = require('./VehicleScan')(sequelize);
 const Project = require('./Project')(sequelize);
 const Review = require('./Review')(sequelize);
 const MarketplaceIntegration = require('./MarketplaceIntegration')(sequelize);
 const Recommendation = require('./Recommendation')(sequelize);
+const Order = require('./Order')(sequelize);
+const Payment = require('./Payment')(sequelize);
+const Maintenance = require('./Maintenance')(sequelize);
+const PartCompatibility = require('./PartCompatibility')(sequelize);
 
 // Define associations
 User.hasMany(Vehicle, { foreignKey: 'userId', as: 'vehicles' });
@@ -83,10 +88,15 @@ module.exports = {
   Vehicle,
   Part,
   Scan,
+  VehicleScan,
   Project,
   Review,
   MarketplaceIntegration,
   Recommendation,
+  Order,
+  Payment,
+  Maintenance,
+  PartCompatibility,
   connectDatabase,
   syncDatabase
 };
