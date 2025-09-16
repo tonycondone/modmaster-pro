@@ -3,6 +3,7 @@ const Joi = require('joi');
 const { requireAuth } = require('../middleware/auth');
 const validate = require('../middleware/validation');
 const stripeService = require('../services/stripeService');
+const { db } = require('../models');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -116,20 +117,20 @@ router.post('/create-billing-portal-session', requireAuth, async (req, res) => {
  */
 router.get('/subscription', requireAuth, async (req, res) => {
   try {
-    const subscription = await Subscription.findOne({
-      where: { 
-        userId: req.user.id,
-        status: ['active', 'trialing']
-      },
-      include: [{
-        model: Payment,
-        as: 'payments',
-        limit: 5,
-        order: [['createdAt', 'DESC']]
-      }]
+    const subscription = await db('subscriptions')
+      .where('user_id', req.user.id)
+      .whereIn('status', ['active', 'trialing'])
+      .first();
+
+    const payments = await db('payments')
+      .where('user_id', req.user.id)
+      .orderBy('created_at', 'desc')
+      .limit(5);
+
+    res.json({ 
+      subscription,
+      payments 
     });
-    
-    res.json({ subscription });
   } catch (error) {
     logger.error('Error fetching subscription:', error);
     res.status(500).json({ 
@@ -222,16 +223,20 @@ router.get('/history', requireAuth, async (req, res) => {
   try {
     const { limit = 10, offset = 0 } = req.query;
     
-    const payments = await Payment.findAndCountAll({
-      where: { userId: req.user.id },
-      order: [['createdAt', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
-    });
+    const payments = await db('payments')
+      .where('user_id', req.user.id)
+      .orderBy('created_at', 'desc')
+      .limit(parseInt(limit))
+      .offset(parseInt(offset));
+
+    const total = await db('payments')
+      .where('user_id', req.user.id)
+      .count('* as count')
+      .first();
     
     res.json({
-      payments: payments.rows,
-      total: payments.count,
+      payments,
+      total: parseInt(total.count),
       limit: parseInt(limit),
       offset: parseInt(offset)
     });

@@ -213,47 +213,22 @@ const config = {
 
   // Performance
   performance: {
-    cache: {
-      defaultTtl: parseInt(process.env.CACHE_TTL_DEFAULT, 10) || 3600,
-      userDataTtl: parseInt(process.env.CACHE_TTL_USER_DATA, 10) || 1800,
-      partsDataTtl: parseInt(process.env.CACHE_TTL_PARTS_DATA, 10) || 7200,
-      priceDataTtl: parseInt(process.env.CACHE_TTL_PRICE_DATA, 10) || 300,
-      aiPredictionsTtl: parseInt(process.env.CACHE_TTL_AI_PREDICTIONS, 10) || 3600,
+  // Stripe Configuration
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || "sk_test_placeholder",
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
+    products: {
+      basic: process.env.STRIPE_PRODUCT_BASIC || "prod_basic",
+      pro: process.env.STRIPE_PRODUCT_PRO || "prod_pro",
+      enterprise: process.env.STRIPE_PRODUCT_ENTERPRISE || "prod_enterprise"
     },
+    prices: {
+      basic_monthly: process.env.STRIPE_PRICE_BASIC_MONTHLY || "price_basic_monthly",
+      basic_yearly: process.env.STRIPE_PRICE_BASIC_YEARLY || "price_basic_yearly",
+      pro_monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || "price_pro_monthly",
+      pro_yearly: process.env.STRIPE_PRICE_PRO_YEARLY || "price_pro_yearly",
+      enterprise_monthly: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY || "price_enterprise_monthly",
+      enterprise_yearly: process.env.STRIPE_PRICE_ENTERPRISE_YEARLY || "price_enterprise_yearly"
+    }
   },
-
-  // Security
-  security: {
-    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
-    sessionSecret: process.env.SESSION_SECRET || 'modmaster-session-secret',
-    csrfProtection: process.env.CSRF_PROTECTION !== 'false',
-    xssProtection: process.env.XSS_PROTECTION !== 'false',
-    hstsEnabled: process.env.HSTS_ENABLED !== 'false',
-    hstsMaxAge: parseInt(process.env.HSTS_MAX_AGE, 10) || 31536000,
-  },
-};
-
-// Validate required configuration
-const validateConfig = () => {
-  const required = [
-    'jwt.secret',
-    'database.url',
-    'redis.url',
-  ];
-
-  const missing = required.filter(key => {
-    const value = key.split('.').reduce((obj, k) => obj && obj[k], config);
-    return !value;
-  });
-
-  if (missing.length > 0) {
-    throw new Error(`Missing required configuration: ${missing.join(', ')}`);
-  }
-};
-
-// Validate configuration in non-test environments
-if (config.app.environment !== 'test') {
-  validateConfig();
-}
-
-module.exports = config;
+    cache: {

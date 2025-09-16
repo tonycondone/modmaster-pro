@@ -16,16 +16,31 @@ const db = knex({
   }
 });
 
-// Test database connection
-db.raw('SELECT 1')
-  .then(() => {
+// Test database connection function
+const testConnection = async () => {
+  try {
+    await db.raw('SELECT 1');
     logger.info('Database connection established successfully');
-  })
-  .catch((error) => {
+    return true;
+  } catch (error) {
     logger.error('Database connection failed:', error);
-    process.exit(1);
-  });
+    throw error;
+  }
+};
+
+// Close database connection
+const close = async () => {
+  try {
+    await db.destroy();
+    logger.info('Database connection closed');
+  } catch (error) {
+    logger.error('Error closing database connection:', error);
+    throw error;
+  }
+};
 
 // Export both named and default exports
 module.exports = db;
 module.exports.db = db;
+module.exports.testConnection = testConnection;
+module.exports.close = close;

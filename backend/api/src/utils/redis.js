@@ -1,9 +1,10 @@
 const redis = require('redis');
+const config = require('../config');
 const logger = require('./logger');
 
 // Create Redis client
 const client = redis.createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  url: config.redis.url,
   socket: {
     reconnectStrategy: (retries) => {
       if (retries > 10) {
@@ -28,14 +29,29 @@ client.on('ready', () => {
   logger.info('Redis client ready');
 });
 
-// Connect to Redis
-(async () => {
+// Test Redis connection function
+const testConnection = async () => {
   try {
     await client.connect();
+    await client.ping();
+    logger.info('Redis connection test successful');
+    return true;
   } catch (error) {
-    logger.error('Failed to connect to Redis:', error);
+    logger.error('Redis connection test failed:', error);
+    throw error;
   }
-})();
+};
+
+// Close Redis connection
+const close = async () => {
+  try {
+    await client.disconnect();
+    logger.info('Redis connection closed');
+  } catch (error) {
+    logger.error('Error closing Redis connection:', error);
+    throw error;
+  }
+};
 
 // Promisify Redis methods for easier use
 const redisClient = {
@@ -59,7 +75,9 @@ const redisClient = {
   srem: (key, ...members) => client.sRem(key, members),
   smembers: (key) => client.sMembers(key),
   sismember: (key, member) => client.sIsMember(key, member),
-  client: client
+  client: client,
+  testConnection,
+  close
 };
 
 module.exports = redisClient;

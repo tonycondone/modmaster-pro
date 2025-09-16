@@ -1,7 +1,7 @@
 const Stripe = require('stripe');
 const config = require('../config');
 const logger = require('../utils/logger');
-const { User, Subscription, Payment } = require('../models');
+const { db } = require('../models');
 
 class StripeService {
   constructor() {
@@ -32,7 +32,7 @@ class StripeService {
     try {
       const customer = await this.stripe.customers.create({
         email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
+        name: `${user.first_name} ${user.last_name}`,
         metadata: {
           userId: user.id,
           username: user.username
@@ -40,7 +40,9 @@ class StripeService {
       });
 
       // Update user with Stripe customer ID
-      await user.update({ stripeCustomerId: customer.id });
+      await db('users')
+        .where('id', user.id)
+        .update({ stripe_customer_id: customer.id });
 
       logger.info(`Stripe customer created for user ${user.id}: ${customer.id}`);
       return customer;
@@ -55,13 +57,13 @@ class StripeService {
    */
   async createCheckoutSession(userId, plan, interval = 'monthly') {
     try {
-      const user = await User.findByPk(userId);
+      const user = await db('users').where('id', userId).first();
       if (!user) {
         throw new Error('User not found');
       }
 
       // Ensure user has a Stripe customer ID
-      let customerId = user.stripeCustomerId;
+      let customerId = user.stripe_customer_id;
       if (!customerId) {
         const customer = await this.createCustomer(user);
         customerId = customer.id;
@@ -114,13 +116,13 @@ class StripeService {
    */
   async createBillingPortalSession(userId) {
     try {
-      const user = await User.findByPk(userId);
-      if (!user || !user.stripeCustomerId) {
+      const user = await db('users').where('id', userId).first();
+      if (!user || !user.stripe_customer_id) {
         throw new Error('User not found or no Stripe customer');
       }
 
       const session = await this.stripe.billingPortal.sessions.create({
-        customer: user.stripeCustomerId,
+        customer: user.stripe_customer_id,
         return_url: `${config.app.frontendUrl}/profile/billing`
       });
 
@@ -190,21 +192,14 @@ class StripeService {
   async handleCheckoutSessionCompleted(session) {
     try {
       const userId = session.metadata.userId;
-      const user = await User.findByPk(userId);
+      const user = await db('users').where('id', userId).first();
       
       if (!user) {
         logger.error(`User not found for checkout session: ${userId}`);
         return;
       }
 
-      // Subscription will be handled by subscription webhook
       logger.info(`Checkout completed for user ${userId}`);
-      
-      // Send confirmation email
-      await emailService.sendSubscriptionConfirmation(user.email, {
-        plan: session.metadata.plan,
-        interval: session.metadata.interval
-      });
     } catch (error) {
       logger.error('Error handling checkout session completed:', error);
     }
@@ -216,7 +211,7 @@ class StripeService {
   async handleSubscriptionUpdate(subscription) {
     try {
       const userId = subscription.metadata.userId;
-      const user = await User.findByPk(userId);
+      const user = await db('users').where('id', userId).first();
       
       if (!user) {
         logger.error(`User not found for subscription: ${userId}`);
@@ -235,39 +230,41 @@ class StripeService {
       }
 
       // Update or create subscription record
-      const [dbSubscription, created] = await Subscription.findOrCreate({
-        where: { stripeSubscriptionId: subscription.id },
-        defaults: {
-          userId,
-          stripeSubscriptionId: subscription.id,
-          stripePriceId: priceId,
-          status: subscription.status,
-          plan,
-          interval: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
-          trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null
-        }
-      });
+      const existingSubscription = await db('subscriptions')
+        .where('stripe_subscription_id', subscription.id)
+        .first();
 
-      if (!created) {
-        await dbSubscription.update({
-          status: subscription.status,
-          plan,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
-          trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null
-        });
+      const subscriptionData = {
+        user_id: userId,
+        stripe_subscription_id: subscription.id,
+        stripe_price_id: priceId,
+        status: subscription.status,
+        plan,
+        interval: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+        current_period_start: new Date(subscription.current_period_start * 1000),
+        current_period_end: new Date(subscription.current_period_end * 1000),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+        updated_at: new Date()
+      };
+
+      if (existingSubscription) {
+        await db('subscriptions')
+          .where('id', existingSubscription.id)
+          .update(subscriptionData);
+      } else {
+        subscriptionData.created_at = new Date();
+        await db('subscriptions').insert(subscriptionData);
       }
 
       // Update user subscription tier
       if (subscription.status === 'active' || subscription.status === 'trialing') {
-        await user.update({ subscriptionTier: plan });
+        await db('users')
+          .where('id', userId)
+          .update({ subscription_tier: plan });
       }
 
-      logger.info(`Subscription ${created ? 'created' : 'updated'} for user ${userId}: ${plan}`);
+      logger.info(`Subscription ${existingSubscription ? 'updated' : 'created'} for user ${userId}: ${plan}`);
     } catch (error) {
       logger.error('Error handling subscription update:', error);
     }
@@ -278,34 +275,34 @@ class StripeService {
    */
   async handleSubscriptionDeleted(subscription) {
     try {
-      const dbSubscription = await Subscription.findOne({
-        where: { stripeSubscriptionId: subscription.id }
-      });
+      const dbSubscription = await db('subscriptions')
+        .where('stripe_subscription_id', subscription.id)
+        .first();
 
       if (!dbSubscription) {
         logger.warn(`Subscription not found in database: ${subscription.id}`);
         return;
       }
 
-      const user = await User.findByPk(dbSubscription.userId);
+      const user = await db('users').where('id', dbSubscription.user_id).first();
       
       // Update subscription status
-      await dbSubscription.update({ 
-        status: 'canceled',
-        canceledAt: new Date()
-      });
+      await db('subscriptions')
+        .where('id', dbSubscription.id)
+        .update({ 
+          status: 'canceled',
+          canceled_at: new Date(),
+          updated_at: new Date()
+        });
 
       // Downgrade user to free tier
       if (user) {
-        await user.update({ subscriptionTier: 'free' });
-        
-        // Send cancellation email
-        await emailService.sendSubscriptionCanceled(user.email, {
-          plan: dbSubscription.plan
-        });
+        await db('users')
+          .where('id', dbSubscription.user_id)
+          .update({ subscription_tier: 'free' });
       }
 
-      logger.info(`Subscription canceled for user ${dbSubscription.userId}`);
+      logger.info(`Subscription canceled for user ${dbSubscription.user_id}`);
     } catch (error) {
       logger.error('Error handling subscription deleted:', error);
     }
@@ -316,9 +313,9 @@ class StripeService {
    */
   async handleInvoicePaymentSucceeded(invoice) {
     try {
-      const subscription = await Subscription.findOne({
-        where: { stripeSubscriptionId: invoice.subscription }
-      });
+      const subscription = await db('subscriptions')
+        .where('stripe_subscription_id', invoice.subscription)
+        .first();
 
       if (!subscription) {
         logger.warn(`Subscription not found for invoice: ${invoice.subscription}`);
@@ -326,33 +323,25 @@ class StripeService {
       }
 
       // Record payment
-      await Payment.create({
-        userId: subscription.userId,
-        stripePaymentIntentId: invoice.payment_intent,
-        stripeInvoiceId: invoice.id,
+      await db('payments').insert({
+        user_id: subscription.user_id,
+        stripe_payment_intent_id: invoice.payment_intent,
+        stripe_invoice_id: invoice.id,
         amount: invoice.amount_paid / 100, // Convert from cents
         currency: invoice.currency,
         status: 'succeeded',
         description: `Subscription payment for ${subscription.plan} plan`,
-        metadata: {
+        metadata: JSON.stringify({
           subscriptionId: subscription.id,
           invoiceNumber: invoice.number,
           billingPeriod: {
             start: new Date(invoice.period_start * 1000),
             end: new Date(invoice.period_end * 1000)
           }
-        }
+        }),
+        created_at: new Date(),
+        updated_at: new Date()
       });
-
-      // Send receipt
-      const user = await User.findByPk(subscription.userId);
-      if (user) {
-        await emailService.sendPaymentReceipt(user.email, {
-          amount: invoice.amount_paid / 100,
-          currency: invoice.currency,
-          invoiceUrl: invoice.hosted_invoice_url
-        });
-      }
 
       logger.info(`Payment succeeded for subscription ${subscription.id}: $${invoice.amount_paid / 100}`);
     } catch (error) {
@@ -365,9 +354,9 @@ class StripeService {
    */
   async handleInvoicePaymentFailed(invoice) {
     try {
-      const subscription = await Subscription.findOne({
-        where: { stripeSubscriptionId: invoice.subscription }
-      });
+      const subscription = await db('subscriptions')
+        .where('stripe_subscription_id', invoice.subscription)
+        .first();
 
       if (!subscription) {
         logger.warn(`Subscription not found for failed invoice: ${invoice.subscription}`);
@@ -375,26 +364,18 @@ class StripeService {
       }
 
       // Record failed payment
-      await Payment.create({
-        userId: subscription.userId,
-        stripePaymentIntentId: invoice.payment_intent,
-        stripeInvoiceId: invoice.id,
+      await db('payments').insert({
+        user_id: subscription.user_id,
+        stripe_payment_intent_id: invoice.payment_intent,
+        stripe_invoice_id: invoice.id,
         amount: invoice.amount_due / 100,
         currency: invoice.currency,
         status: 'failed',
         description: `Failed subscription payment for ${subscription.plan} plan`,
-        failureReason: invoice.last_payment_error?.message
+        failure_reason: invoice.last_payment_error?.message,
+        created_at: new Date(),
+        updated_at: new Date()
       });
-
-      // Send payment failed email
-      const user = await User.findByPk(subscription.userId);
-      if (user) {
-        await emailService.sendPaymentFailed(user.email, {
-          amount: invoice.amount_due / 100,
-          currency: invoice.currency,
-          updatePaymentUrl: `${config.app.frontendUrl}/profile/billing`
-        });
-      }
 
       logger.warn(`Payment failed for subscription ${subscription.id}`);
     } catch (error) {
@@ -407,25 +388,16 @@ class StripeService {
    */
   async handleTrialWillEnd(subscription) {
     try {
-      const dbSubscription = await Subscription.findOne({
-        where: { stripeSubscriptionId: subscription.id }
-      });
+      const dbSubscription = await db('subscriptions')
+        .where('stripe_subscription_id', subscription.id)
+        .first();
 
       if (!dbSubscription) {
         logger.warn(`Subscription not found for trial ending: ${subscription.id}`);
         return;
       }
 
-      const user = await User.findByPk(dbSubscription.userId);
-      if (user) {
-        await emailService.sendTrialEndingReminder(user.email, {
-          plan: dbSubscription.plan,
-          trialEndDate: new Date(subscription.trial_end * 1000),
-          upgradeUrl: `${config.app.frontendUrl}/subscription`
-        });
-      }
-
-      logger.info(`Trial ending reminder sent for user ${dbSubscription.userId}`);
+      logger.info(`Trial ending reminder for user ${dbSubscription.user_id}`);
     } catch (error) {
       logger.error('Error handling trial will end:', error);
     }
@@ -436,9 +408,10 @@ class StripeService {
    */
   async cancelSubscription(userId) {
     try {
-      const subscription = await Subscription.findOne({
-        where: { userId, status: 'active' }
-      });
+      const subscription = await db('subscriptions')
+        .where('user_id', userId)
+        .where('status', 'active')
+        .first();
 
       if (!subscription) {
         throw new Error('No active subscription found');
@@ -446,13 +419,16 @@ class StripeService {
 
       // Cancel at period end
       const stripeSubscription = await this.stripe.subscriptions.update(
-        subscription.stripeSubscriptionId,
+        subscription.stripe_subscription_id,
         { cancel_at_period_end: true }
       );
 
-      await subscription.update({
-        cancelAtPeriodEnd: true
-      });
+      await db('subscriptions')
+        .where('id', subscription.id)
+        .update({
+          cancel_at_period_end: true,
+          updated_at: new Date()
+        });
 
       logger.info(`Subscription set to cancel for user ${userId}`);
       return stripeSubscription;
@@ -467,22 +443,27 @@ class StripeService {
    */
   async resumeSubscription(userId) {
     try {
-      const subscription = await Subscription.findOne({
-        where: { userId, status: 'active', cancelAtPeriodEnd: true }
-      });
+      const subscription = await db('subscriptions')
+        .where('user_id', userId)
+        .where('status', 'active')
+        .where('cancel_at_period_end', true)
+        .first();
 
       if (!subscription) {
         throw new Error('No subscription to resume');
       }
 
       const stripeSubscription = await this.stripe.subscriptions.update(
-        subscription.stripeSubscriptionId,
+        subscription.stripe_subscription_id,
         { cancel_at_period_end: false }
       );
 
-      await subscription.update({
-        cancelAtPeriodEnd: false
-      });
+      await db('subscriptions')
+        .where('id', subscription.id)
+        .update({
+          cancel_at_period_end: false,
+          updated_at: new Date()
+        });
 
       logger.info(`Subscription resumed for user ${userId}`);
       return stripeSubscription;
