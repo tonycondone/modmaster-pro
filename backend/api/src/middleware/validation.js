@@ -1,4 +1,4 @@
-const { validationResult } = require('express-validator');
+const { validationResult, body } = require('express-validator');
 const logger = require('../utils/logger');
 const sanitizeHtml = require('sanitize-html');
 const xss = require('xss');
@@ -298,6 +298,38 @@ const customValidators = {
   }
 };
 
+// Validation schemas
+const validations = {
+  createUser: [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
+    body('firstName').trim().isLength({ min: 1 }).withMessage('First name is required'),
+    body('lastName').trim().isLength({ min: 1 }).withMessage('Last name is required')
+  ],
+  login: [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password').notEmpty().withMessage('Password is required')
+  ],
+  updateUser: [
+    body('firstName').optional().trim().isLength({ min: 1 }).withMessage('First name cannot be empty'),
+    body('lastName').optional().trim().isLength({ min: 1 }).withMessage('Last name cannot be empty'),
+    body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required')
+  ],
+  createScan: [
+    body('vehicleId').optional().isUUID().withMessage('Valid vehicle ID is required'),
+    body('scanType').isIn(['engine_bay', 'vin', 'part_identification', 'full_vehicle']).withMessage('Valid scan type is required'),
+    body('images').isArray({ min: 1 }).withMessage('At least one image is required'),
+    body('images.*').isURL().withMessage('Valid image URL is required')
+  ],
+  createPart: [
+    body('name').trim().isLength({ min: 1 }).withMessage('Part name is required'),
+    body('category').trim().isLength({ min: 1 }).withMessage('Part category is required'),
+    body('brand').optional().trim().isLength({ min: 1 }).withMessage('Brand cannot be empty'),
+    body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    body('description').optional().trim().isLength({ min: 1 }).withMessage('Description cannot be empty')
+  ]
+};
+
 module.exports = {
   validate,
   validateJoi,
@@ -305,5 +337,6 @@ module.exports = {
   sanitizeAll,
   validatePagination,
   validateFileUpload,
-  customValidators
+  customValidators,
+  validations
 };

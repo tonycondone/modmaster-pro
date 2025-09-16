@@ -109,7 +109,7 @@ npm install -g @expo/cli
 
 ### 1. **Clone the Repository**
 ```bash
-git clone https://github.com/your-username/modmaster-pro.git
+git clone https://github.com/tonycondone/modmaster-pro.git
 cd modmaster-pro
 ```
 

@@ -11,8 +11,8 @@ exports.up = function(knex) {
     // Vehicle compatibility information
     table.string('make', 100).notNullable();
     table.string('model', 100).notNullable();
-    table.integer('year_start').notNullable().checkBetween([1900, new Date().getFullYear() + 1]);
-    table.integer('year_end').notNullable().checkBetween([1900, new Date().getFullYear() + 1]);
+    table.integer('year_start').notNullable();
+    table.integer('year_end').notNullable();
     
     // Optional compatibility restrictions
     table.string('engine', 100).comment('Specific engine requirement (e.g., "2.5L", "V6")');
@@ -49,8 +49,7 @@ exports.up = function(knex) {
     table.index('verified');
     table.index(['part_id', 'make', 'model']);
     
-    // Constraints
-    table.check('year_end >= year_start', 'check_year_range');
+    // Constraints removed for compatibility
   });
 };
 

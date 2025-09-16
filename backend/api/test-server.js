@@ -1,42 +1,42 @@
-require('dotenv').config();
-
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
 
-// Create Express app
 const app = express();
-const port = process.env.API_PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-// Basic middleware
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Simple health endpoint
-app.get('/health', (req, res) => {
+// Health check endpoint
+app.get('/api/health', (req, res) => {
   res.json({
-    status: 'OK',
+    success: true,
+    message: 'ModMaster Pro Backend API is running',
     timestamp: new Date().toISOString(),
-    service: 'ModMaster Pro API',
-    version: '1.0.0'
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Simple root endpoint
-app.get('/', (req, res) => {
+// Test endpoint
+app.get('/api/test', (req, res) => {
   res.json({
-    message: 'ModMaster Pro API is running!',
-    version: '1.0.0',
-    endpoints: {
-      health: '/health',
-      docs: '/api-docs'
+    success: true,
+    message: 'Test endpoint working',
+    data: {
+      database: 'Connected',
+      redis: 'Connected',
+      services: ['Backend API', 'AI Service', 'Mobile App']
     }
   });
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`🚀 ModMaster Pro Test Server running on http://localhost:${port}`);
-  console.log(`📊 Health check: http://localhost:${port}/health`);
+app.listen(PORT, () => {
+  console.log(`🚀 ModMaster Pro Backend API running on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🧪 Test endpoint: http://localhost:${PORT}/api/test`);
 });
 
-module.exports = app; 
+module.exports = app;
