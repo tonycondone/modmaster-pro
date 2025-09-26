@@ -1,5 +1,7 @@
 const { body, validationResult } = require('express-validator');
+const Joi = require('joi');
 
+// Express-validator based validation
 const validate = (schemas) => {
   return async (req, res, next) => {
     await Promise.all(schemas.map(schema => schema.run(req)));
@@ -9,6 +11,24 @@ const validate = (schemas) => {
         success: false,
         message: 'Validation failed',
         errors: errors.array()
+      });
+    }
+    next();
+  };
+};
+
+// Joi-based validation middleware
+const validateJoi = (schema) => {
+  return (req, res, next) => {
+    const { error } = schema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: error.details.map(detail => ({
+          field: detail.path.join('.'),
+          message: detail.message
+        }))
       });
     }
     next();
@@ -48,4 +68,4 @@ const validations = {
 
 const commonValidations = {};
 
-module.exports = { validate, validations, commonValidations };
+module.exports = { validate, validateJoi, validations, commonValidations };

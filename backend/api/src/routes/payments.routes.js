@@ -1,7 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const { requireAuth } = require('../middleware/auth');
-const validate = require('../middleware/validation');
+const { validateJoi } = require('../middleware/validation');
 const stripeService = require('../services/stripeService');
 const { db } = require('../models');
 const logger = require('../utils/logger');
@@ -51,7 +51,7 @@ const createCheckoutSchema = Joi.object({
  *                 sessionId: { type: string }
  *                 url: { type: string }
  */
-router.post('/create-checkout-session', requireAuth, validate(createCheckoutSchema), async (req, res) => {
+router.post('/create-checkout-session', requireAuth, validateJoi(createCheckoutSchema), async (req, res) => {
   try {
     const { plan, interval } = req.body;
     const session = await stripeService.createCheckoutSession(req.user.id, plan, interval);

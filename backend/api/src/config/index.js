@@ -45,16 +45,6 @@ const config = {
     keyPrefix: process.env.REDIS_KEY_PREFIX || 'modmaster:',
   },
 
-  // Elasticsearch
-  elasticsearch: {
-    url: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
-    host: process.env.ELASTICSEARCH_HOST || 'localhost',
-    port: parseInt(process.env.ELASTICSEARCH_PORT, 10) || 9200,
-    username: process.env.ELASTICSEARCH_USERNAME || '',
-    password: process.env.ELASTICSEARCH_PASSWORD || '',
-    indexPrefix: process.env.ELASTICSEARCH_INDEX_PREFIX || 'modmaster',
-  },
-
   // JWT Authentication
   jwt: {
     secret: process.env.JWT_SECRET || (() => {
@@ -213,6 +203,12 @@ const config = {
 
   // Performance
   performance: {
+    cache: {
+      ttl: parseInt(process.env.CACHE_TTL, 10) || 3600,
+      maxSize: parseInt(process.env.CACHE_MAX_SIZE, 10) || 1000,
+    },
+  },
+
   // Stripe Configuration
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY || "sk_test_placeholder",
@@ -231,4 +227,6 @@ const config = {
       enterprise_yearly: process.env.STRIPE_PRICE_ENTERPRISE_YEARLY || "price_enterprise_yearly"
     }
   },
-    cache: {
+};
+
+module.exports = config;
