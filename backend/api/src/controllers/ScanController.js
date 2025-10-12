@@ -485,22 +485,22 @@ class ScanController {
       let filename;
 
       switch (format) {
-        case 'csv':
-          exportData = this.generateCSVExport(scan);
-          contentType = 'text/csv';
-          filename = `scan_${id}_results.csv`;
-          break;
+      case 'csv':
+        exportData = this.generateCSVExport(scan);
+        contentType = 'text/csv';
+        filename = `scan_${id}_results.csv`;
+        break;
         
-        case 'pdf':
-          exportData = await this.generatePDFExport(scan);
-          contentType = 'application/pdf';
-          filename = `scan_${id}_results.pdf`;
-          break;
+      case 'pdf':
+        exportData = await this.generatePDFExport(scan);
+        contentType = 'application/pdf';
+        filename = `scan_${id}_results.pdf`;
+        break;
         
-        default:
-          exportData = JSON.stringify(scan, null, 2);
-          contentType = 'application/json';
-          filename = `scan_${id}_results.json`;
+      default:
+        exportData = JSON.stringify(scan, null, 2);
+        contentType = 'application/json';
+        filename = `scan_${id}_results.json`;
       }
 
       res.setHeader('Content-Type', contentType);
@@ -607,20 +607,20 @@ class ScanController {
     const start = new Date();
 
     switch (period) {
-      case '7d':
-        start.setDate(start.getDate() - 7);
-        break;
-      case '30d':
-        start.setDate(start.getDate() - 30);
-        break;
-      case '90d':
-        start.setDate(start.getDate() - 90);
-        break;
-      case '1y':
-        start.setFullYear(start.getFullYear() - 1);
-        break;
-      default:
-        start.setDate(start.getDate() - 30);
+    case '7d':
+      start.setDate(start.getDate() - 7);
+      break;
+    case '30d':
+      start.setDate(start.getDate() - 30);
+      break;
+    case '90d':
+      start.setDate(start.getDate() - 90);
+      break;
+    case '1y':
+      start.setFullYear(start.getFullYear() - 1);
+      break;
+    default:
+      start.setDate(start.getDate() - 30);
     }
 
     return { start, end };

@@ -152,33 +152,33 @@ class StripeService {
     logger.info(`Handling webhook event: ${event.type}`);
 
     switch (event.type) {
-      case 'checkout.session.completed':
-        await this.handleCheckoutSessionCompleted(event.data.object);
-        break;
+    case 'checkout.session.completed':
+      await this.handleCheckoutSessionCompleted(event.data.object);
+      break;
 
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-        await this.handleSubscriptionUpdate(event.data.object);
-        break;
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+      await this.handleSubscriptionUpdate(event.data.object);
+      break;
 
-      case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(event.data.object);
-        break;
+    case 'customer.subscription.deleted':
+      await this.handleSubscriptionDeleted(event.data.object);
+      break;
 
-      case 'invoice.payment_succeeded':
-        await this.handleInvoicePaymentSucceeded(event.data.object);
-        break;
+    case 'invoice.payment_succeeded':
+      await this.handleInvoicePaymentSucceeded(event.data.object);
+      break;
 
-      case 'invoice.payment_failed':
-        await this.handleInvoicePaymentFailed(event.data.object);
-        break;
+    case 'invoice.payment_failed':
+      await this.handleInvoicePaymentFailed(event.data.object);
+      break;
 
-      case 'customer.subscription.trial_will_end':
-        await this.handleTrialWillEnd(event.data.object);
-        break;
+    case 'customer.subscription.trial_will_end':
+      await this.handleTrialWillEnd(event.data.object);
+      break;
 
-      default:
-        logger.info(`Unhandled webhook event type: ${event.type}`);
+    default:
+      logger.info(`Unhandled webhook event type: ${event.type}`);
     }
 
     return { received: true };

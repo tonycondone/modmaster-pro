@@ -570,16 +570,16 @@ class UserController {
       let filename;
 
       switch (format) {
-        case 'csv':
-          exportData = this.generateCSVExport(userData);
-          contentType = 'text/csv';
-          filename = 'modmaster_user_data.csv';
-          break;
+      case 'csv':
+        exportData = this.generateCSVExport(userData);
+        contentType = 'text/csv';
+        filename = 'modmaster_user_data.csv';
+        break;
         
-        default:
-          exportData = JSON.stringify(userData, null, 2);
-          contentType = 'application/json';
-          filename = 'modmaster_user_data.json';
+      default:
+        exportData = JSON.stringify(userData, null, 2);
+        contentType = 'application/json';
+        filename = 'modmaster_user_data.json';
       }
 
       res.setHeader('Content-Type', contentType);

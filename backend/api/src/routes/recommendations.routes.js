@@ -61,27 +61,27 @@ router.get('/', authenticate, async (req, res, next) => {
     let recommendations = [];
     
     switch (type) {
-      case 'parts':
-        recommendations = await getPartRecommendations(req.user, targetVehicles, { category, budget });
-        break;
-      case 'projects':
-        recommendations = await getProjectRecommendations(req.user, targetVehicles, { budget });
-        break;
-      case 'maintenance':
-        recommendations = await getMaintenanceRecommendations(req.user, targetVehicles);
-        break;
-      default: // 'all'
-        const [parts, projects, maintenance] = await Promise.all([
-          getPartRecommendations(req.user, targetVehicles, { category, budget, limit: 10 }),
-          getProjectRecommendations(req.user, targetVehicles, { budget, limit: 5 }),
-          getMaintenanceRecommendations(req.user, targetVehicles, { limit: 5 })
-        ]);
+    case 'parts':
+      recommendations = await getPartRecommendations(req.user, targetVehicles, { category, budget });
+      break;
+    case 'projects':
+      recommendations = await getProjectRecommendations(req.user, targetVehicles, { budget });
+      break;
+    case 'maintenance':
+      recommendations = await getMaintenanceRecommendations(req.user, targetVehicles);
+      break;
+    default: // 'all'
+      const [parts, projects, maintenance] = await Promise.all([
+        getPartRecommendations(req.user, targetVehicles, { category, budget, limit: 10 }),
+        getProjectRecommendations(req.user, targetVehicles, { budget, limit: 5 }),
+        getMaintenanceRecommendations(req.user, targetVehicles, { limit: 5 })
+      ]);
         
-        recommendations = [
-          ...parts.map(r => ({ ...r, type: 'part' })),
-          ...projects.map(r => ({ ...r, type: 'project' })),
-          ...maintenance.map(r => ({ ...r, type: 'maintenance' }))
-        ];
+      recommendations = [
+        ...parts.map(r => ({ ...r, type: 'part' })),
+        ...projects.map(r => ({ ...r, type: 'project' })),
+        ...maintenance.map(r => ({ ...r, type: 'maintenance' }))
+      ];
     }
 
     // Paginate results

@@ -6,6 +6,7 @@ from app.config import settings
 # Create database connection
 database = databases.Database(settings.DATABASE_URL)
 
+
 async def connect():
     """Connect to PostgreSQL database."""
     try:
@@ -14,6 +15,7 @@ async def connect():
     except Exception as e:
         logger.error(f"Failed to connect to PostgreSQL: {e}")
         raise
+
 
 async def disconnect():
     """Disconnect from PostgreSQL database."""

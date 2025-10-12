@@ -522,29 +522,29 @@ class PaymentController {
 
       // Handle the event
       switch (event.type) {
-        case 'payment_intent.succeeded':
-          await this.handlePaymentSuccess(event.data.object);
-          break;
+      case 'payment_intent.succeeded':
+        await this.handlePaymentSuccess(event.data.object);
+        break;
         
-        case 'payment_intent.payment_failed':
-          await this.handlePaymentFailure(event.data.object);
-          break;
+      case 'payment_intent.payment_failed':
+        await this.handlePaymentFailure(event.data.object);
+        break;
         
-        case 'customer.subscription.created':
-        case 'customer.subscription.updated':
-          await this.handleSubscriptionUpdate(event.data.object);
-          break;
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        await this.handleSubscriptionUpdate(event.data.object);
+        break;
         
-        case 'customer.subscription.deleted':
-          await this.handleSubscriptionCanceled(event.data.object);
-          break;
+      case 'customer.subscription.deleted':
+        await this.handleSubscriptionCanceled(event.data.object);
+        break;
         
-        case 'invoice.payment_succeeded':
-          await this.handleInvoicePayment(event.data.object);
-          break;
+      case 'invoice.payment_succeeded':
+        await this.handleInvoicePayment(event.data.object);
+        break;
         
-        default:
-          logger.info('Unhandled webhook event', { type: event.type });
+      default:
+        logger.info('Unhandled webhook event', { type: event.type });
       }
 
       res.json({ received: true });

@@ -383,20 +383,20 @@ async function searchPartsSQL(params) {
   // Sorting
   let order;
   switch (sort) {
-    case 'price_low':
-      order = [[sequelize.col('marketplaceIntegrations.current_price'), 'ASC']];
-      break;
-    case 'price_high':
-      order = [[sequelize.col('marketplaceIntegrations.current_price'), 'DESC']];
-      break;
-    case 'rating':
-      order = [['averageRating', 'DESC']];
-      break;
-    case 'popularity':
-      order = [['viewCount', 'DESC']];
-      break;
-    default: // relevance
-      order = [['trendingScore', 'DESC'], ['qualityScore', 'DESC']];
+  case 'price_low':
+    order = [[sequelize.col('marketplaceIntegrations.current_price'), 'ASC']];
+    break;
+  case 'price_high':
+    order = [[sequelize.col('marketplaceIntegrations.current_price'), 'DESC']];
+    break;
+  case 'rating':
+    order = [['averageRating', 'DESC']];
+    break;
+  case 'popularity':
+    order = [['viewCount', 'DESC']];
+    break;
+  default: // relevance
+    order = [['trendingScore', 'DESC'], ['qualityScore', 'DESC']];
   }
 
   const offset = (page - 1) * limit;
@@ -482,20 +482,20 @@ async function searchPartsElastic(params) {
   // Sorting
   let sortClause;
   switch (sort) {
-    case 'price_low':
-      sortClause = { lowestPrice: 'asc' };
-      break;
-    case 'price_high':
-      sortClause = { lowestPrice: 'desc' };
-      break;
-    case 'rating':
-      sortClause = { averageRating: 'desc' };
-      break;
-    case 'popularity':
-      sortClause = { viewCount: 'desc' };
-      break;
-    default:
-      sortClause = { _score: 'desc' };
+  case 'price_low':
+    sortClause = { lowestPrice: 'asc' };
+    break;
+  case 'price_high':
+    sortClause = { lowestPrice: 'desc' };
+    break;
+  case 'rating':
+    sortClause = { averageRating: 'desc' };
+    break;
+  case 'popularity':
+    sortClause = { viewCount: 'desc' };
+    break;
+  default:
+    sortClause = { _score: 'desc' };
   }
 
   const body = {

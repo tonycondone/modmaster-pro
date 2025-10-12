@@ -435,7 +435,7 @@ router.get('/stats', authenticate, async (req, res, next) => {
         'scanType',
         [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
         [sequelize.fn('AVG', 
-          sequelize.literal("CASE WHEN status = 'completed' THEN 1 ELSE 0 END")
+          sequelize.literal('CASE WHEN status = \'completed\' THEN 1 ELSE 0 END')
         ), 'successRate']
       ],
       group: ['scanType'],

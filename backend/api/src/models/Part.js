@@ -52,7 +52,7 @@ class Part {
       // Use PostgreSQL full-text search if available
       if (db.client.config.client === 'pg') {
         dbQuery = dbQuery.whereRaw(
-          "to_tsvector('english', name || ' ' || coalesce(description, '')) @@ plainto_tsquery('english', ?)",
+          'to_tsvector(\'english\', name || \' \' || coalesce(description, \'\')) @@ plainto_tsquery(\'english\', ?)',
           [query]
         );
       } else {

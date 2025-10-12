@@ -471,7 +471,7 @@ router.put('/:id',
 
     // Clear part cache
     await cache.del(`part:${id}:full`);
-    await cache.delByPattern(`parts:search:*`);
+    await cache.delByPattern('parts:search:*');
 
     res.json({
       success: true,
