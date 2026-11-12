@@ -14,7 +14,7 @@ httpx==0.25.2
 
 # AI/ML and Computer Vision
 tensorflow==2.15.0
-torch==2.1.1
+torch==2.13.0
 torchvision==0.16.1
 opencv-python==4.8.1.78
 pillow==10.1.0
