@@ -86,7 +86,7 @@ httpx==0.25.2
 factory-boy==3.3.0
 
 # Development and Code Quality
-black==23.11.0
+black==26.10.1
 isort==5.12.0
 flake8==6.1.0
 mypy==1.7.1
